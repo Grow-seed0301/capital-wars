@@ -556,7 +556,7 @@ export function mainPage(): string {
     <h3 class="text-lg font-black mb-3" id="confirmTitle"></h3>
     <div id="confirmBody" class="mb-5"></div>
     <div class="flex gap-3">
-      <button class="btn btn-primary flex-1 py-3" id="confirmOkBtn">✅ 購入する！</button>
+      <button class="btn btn-primary flex-1 py-3" onclick="onConfirmOk()">✅ 決定する！</button>
       <button class="btn btn-outline flex-1 py-3" onclick="closeConfirm()">キャンセル</button>
     </div>
   </div>
@@ -925,7 +925,8 @@ async function buyStock(stockId) {
      <div class="text-2xl font-black text-green-600 my-2">¥\${total.toLocaleString()}</div>
      <div class="text-sm text-gray-500">\${qty}株 × ¥\${price.toLocaleString()}</div>
      <div class="text-sm font-bold text-gray-500 mt-1">手持ち ¥\${gameState.players[gameState.currentPlayer].cash.toLocaleString()}</div></div>\`,
-    () => doAction({ type:'buy_stock', stockId, qty })
+    () => doAction({ type:'buy_stock', stockId, qty }),
+    '📈 買う！'
   )
 }
 
@@ -939,7 +940,8 @@ async function sellStock(stockId) {
     \`<div class="text-center"><div class="text-4xl mb-1">\${st.emoji}</div><div class="font-black">\${st.name}</div>
      <div class="text-2xl font-black text-blue-600 my-2">+¥\${total.toLocaleString()}</div>
      <div class="text-sm text-gray-500">\${qty}株 × ¥\${price.toLocaleString()}</div></div>\`,
-    () => doAction({ type:'sell_stock', stockId, qty })
+    () => doAction({ type:'sell_stock', stockId, qty }),
+    '📉 売る！'
   )
 }
 
@@ -953,7 +955,8 @@ async function buyRealEstate(reId) {
        <div class="font-black text-green-700">💡 購入すると…</div>
        <div class="text-green-600 font-semibold">毎ターン +¥\${re.rentPerTurn.toLocaleString()} の家賃収入！</div>
      </div></div>\`,
-    () => doAction({ type:'buy_realestate', reId })
+    () => doAction({ type:'buy_realestate', reId }),
+    '🏠 購入する！'
   )
 }
 
@@ -1132,22 +1135,24 @@ function setActionMsg(msg) {
 // ============================================================
 // 確認モーダル
 // ============================================================
-function showConfirm(title, body, onOk) {
+function showConfirm(title, body, onOk, okLabel) {
   confirmCallback = onOk
   document.getElementById('confirmTitle').textContent = title
   document.getElementById('confirmBody').innerHTML    = body
+  // OK ボタンのラベルを動的に変更
+  const okBtn = document.querySelector('#confirmModal .btn-primary')
+  if (okBtn) okBtn.textContent = okLabel || '✅ 決定する！'
   document.getElementById('confirmModal').style.display = 'flex'
 }
 function closeConfirm() {
   document.getElementById('confirmModal').style.display = 'none'
   confirmCallback = null
 }
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('confirmOkBtn').onclick = () => {
-    closeConfirm()
-    if (confirmCallback) confirmCallback()
-  }
-})
+function onConfirmOk() {
+  const cb = confirmCallback
+  closeConfirm()
+  if (cb) cb()
+}
 
 // ============================================================
 // チュートリアル
