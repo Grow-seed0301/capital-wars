@@ -964,15 +964,23 @@ async function doBuyCompany(companyId){
   showConfirm(
     comp.emoji+' '+comp.name+'を買う？',
     \`<div class="text-2xl font-black" style="color:#f44336;">\${fmt(comp.cost)}</div>
-    <div class="text-sm mt-1">\${comp.desc}</div>\`,
+    <div class="text-sm mt-1">\${comp.desc}</div>
+    \${comp.rolls&&comp.rolls.length>0?'<div class="text-xs mt-2" style="color:#6C63FF;">購入後すぐサイコロを振れます！</div>':''}\`,
     async ()=>{
       const data = await apiPost('/action/buy-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
       G = data.state
-      renderGame()
       spawnCoins(5)
-      showToast('🏢 購入！','info')
+      showToast('🏢 '+comp.name+'を購入！サイコロを振ろう！','info')
+      // サイコロが必要な会社なら即座にサイコロパネルを開く
+      if(data.pendingRoll){
+        renderGame()
+        switchTab('actions')
+        startCompanyRoll(data.pendingRoll)
+      } else {
+        renderGame()
+      }
     }
   )
 }

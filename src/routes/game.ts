@@ -270,11 +270,12 @@ gameRouter.post('/action/buy-company', async (c) => {
 
   p.cash -= comp.cost
   p.companies.push(companyId)
-  p.actionUsed++
+  // 購入はアクション消費しない（サイコロを振る行動が本消費）
   recalcAssets(p, ns)
-  ns.log = [`🏢 ${p.name}が「${comp.emoji}${comp.name}」を${comp.cost}円で購入！`, ...ns.log.slice(0,29)]
-
-  return c.json({ success: true, state: ns })
+  ns.log = [`🏢 ${p.name}が「${comp.emoji}${comp.name}」を${comp.cost}円で購入！サイコロを振ってね！`, ...ns.log.slice(0,29)]
+  // フロントに「今すぐサイコロを振れる」フラグを返す
+  const hasRoll = comp.rolls.length > 0 && comp.id !== 'bank'
+  return c.json({ success: true, state: ns, pendingRoll: hasRoll ? companyId : null })
 })
 
 // ============================================================
