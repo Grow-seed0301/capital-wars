@@ -4,7 +4,7 @@ export function mainPage(): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>💰 もしもし投資ランド！</title>
+<title>⚔️ Capital Wars</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -131,10 +131,10 @@ body{
 ================================================================ -->
 <div id="screen-title" class="screen active" style="position:relative;z-index:1;">
   <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-    <div class="text-8xl mb-4 animate-bounce">💰</div>
-    <h1 class="text-5xl font-black mb-2" style="text-shadow:0 0 30px rgba(255,215,0,.8);">もしもし</h1>
-    <h1 class="text-5xl font-black mb-6" style="color:var(--c3);text-shadow:0 0 30px rgba(255,215,0,.8);">投資ランド！</h1>
-    <p class="text-lg opacity-80 mb-10">かぞくでたのしくおかねのべんきょう！</p>
+    <div class="text-8xl mb-4" style="animation:pulse 1.5s infinite;">⚔️</div>
+    <h1 class="text-6xl font-black mb-1" style="letter-spacing:.08em;text-shadow:0 0 40px rgba(255,215,0,.9);">CAPITAL</h1>
+    <h1 class="text-6xl font-black mb-6" style="color:var(--c3);letter-spacing:.08em;text-shadow:0 0 40px rgba(255,215,0,.9);">WARS</h1>
+    <p class="text-base opacity-70 mb-10 tracking-widest">— 資本をめぐる頭脳戦 —</p>
     <button class="btn btn-primary btn-lg mb-4" onclick="showScreen('title2')">
       <i class="fas fa-play"></i> ゲームをはじめる
     </button>
@@ -215,7 +215,7 @@ body{
     <!-- Header -->
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
       <div class="flex items-center gap-3">
-        <span class="text-2xl">💰</span>
+        <span class="text-2xl">⚔️</span>
         <div>
           <div class="font-black text-xl" id="yearLabel">1年目</div>
           <div class="text-sm opacity-70" id="turnOrderLabel"></div>
@@ -569,7 +569,7 @@ async function startGame(){
     showScreen('game')
     renderGame()
     spawnCoins(10)
-    showToast('🎮 ゲームスタート！','info')
+    showToast('⚔️ Capital Wars — 開戦！','info')
   } catch(e){
     showToast('エラー: '+e.message,'error')
   } finally{

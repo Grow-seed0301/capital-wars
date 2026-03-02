@@ -152,7 +152,7 @@ gameRouter.post('/start', async (c) => {
     currentPlayer: 0,
     eventCard: null as typeof EVENT_CARDS[0] | null,
     activeEventTypes: [] as string[],  // このターン有効なイベント効果
-    log: [`🎮 ゲームスタート！${players.length}人でプレイします！最初の所持金は600円です。`],
+    log: [`⚔️ Capital Wars スタート！${players.length}人で資本戦争開始！初期資金600円。`],
     companies: COMPANIES,
     stocks: STOCKS,
     eventCards: EVENT_CARDS,

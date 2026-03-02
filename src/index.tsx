@@ -12,7 +12,7 @@ app.use('/static/*', serveStatic({ root: './' }))
 // favicon
 app.get('/favicon.svg', (c) => {
   return c.body(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💰</text></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚔️</text></svg>',
     200,
     { 'Content-Type': 'image/svg+xml' }
   )
