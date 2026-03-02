@@ -7,22 +7,16 @@ import { mainPage } from './pages/main'
 const app = new Hono()
 
 app.use('/api/*', cors())
-app.use('/static/*', serveStatic({ root: './' }))
 
-// favicon
-app.get('/favicon.svg', (c) => {
-  return c.body(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚔️</text></svg>',
-    200,
-    { 'Content-Type': 'image/svg+xml' }
-  )
-})
+// 静的ファイル（/static/* は _routes.json の exclude で直接配信）
+// favicon, manifest, ogp も _routes.json で除外済み → Cloudflare Pages が直接配信
+app.use('/static/*', serveStatic({ root: './' }))
 
 // API routes
 app.route('/api/game', gameRouter)
 
 // Main page
-app.get('/', (c) => {
+app.get('*', (c) => {
   const html = mainPage().replace(/SCRIPT_END/g, '</script>')
   return c.html(html)
 })
