@@ -1,1488 +1,1581 @@
 export function mainPage(): string {
-  return `<!DOCTYPE html>
+  return /* html */`<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>💴 もしもし投資ランド！</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-  <style>
-    *{font-family:'Nunito',sans-serif;box-sizing:border-box}
-    body{background:linear-gradient(135deg,#1e3a5f 0%,#0f2027 50%,#203a43 100%);min-height:100vh;margin:0}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>💰 もしもし投資ランド！</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<style>
+:root{
+  --c1:#6C63FF;--c2:#FF6584;--c3:#FFD700;--c4:#4CAF50;--c5:#FF9800;
+}
+*{box-sizing:border-box;}
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  min-height:100vh;color:#fff;
+}
+.screen{display:none;}
+.screen.active{display:block;}
 
-    .btn{border:none;cursor:pointer;border-radius:50px;font-weight:800;transition:all .2s;font-family:'Nunito',sans-serif;display:inline-block;text-align:center;line-height:1}
-    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
-    .btn-primary{background:linear-gradient(135deg,#6C63FF,#9B59B6);color:#fff;padding:10px 22px;font-size:.95rem;box-shadow:0 4px 14px rgba(108,99,255,.4)}
-    .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 18px rgba(108,99,255,.5)}
-    .btn-green{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:8px 16px;font-size:.85rem}
-    .btn-green:hover:not(:disabled){transform:translateY(-2px)}
-    .btn-red{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:8px 16px;font-size:.85rem}
-    .btn-red:hover:not(:disabled){transform:translateY(-2px)}
-    .btn-yellow{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:8px 16px;font-size:.85rem}
-    .btn-yellow:hover:not(:disabled){transform:translateY(-2px)}
-    .btn-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;padding:8px 16px;font-size:.85rem}
-    .btn-blue:hover:not(:disabled){transform:translateY(-2px)}
-    .btn-outline{background:rgba(255,255,255,.1);color:#fff;border:2px solid rgba(255,255,255,.3);padding:8px 18px;font-size:.85rem}
-    .btn-outline:hover:not(:disabled){background:rgba(255,255,255,.2)}
-    .btn-sm{padding:5px 12px;font-size:.78rem}
+/* ===== Stars ===== */
+#stars-bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden;}
+.star{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;animation:twinkle var(--dur,3s) infinite;}
+@keyframes twinkle{0%,100%{opacity:.2;}50%{opacity:1;}}
 
-    .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:18px;backdrop-filter:blur(8px)}
-    .card-white{background:white;border-radius:18px;box-shadow:0 8px 28px rgba(0,0,0,.15)}
+/* ===== Cards ===== */
+.card{background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);border-radius:20px;}
+.card-white{background:#fff;color:#333;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.15);}
 
-    .screen{display:none}
-    .screen.active{display:block}
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:50px;font-weight:700;font-size:1rem;cursor:pointer;border:none;transition:all .2s;user-select:none;}
+.btn:active{transform:scale(.95);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-primary{background:linear-gradient(135deg,var(--c1),#9c65ff);color:#fff;box-shadow:0 4px 15px rgba(108,99,255,.5);}
+.btn-primary:hover:not(:disabled){filter:brightness(1.1);}
+.btn-success{background:linear-gradient(135deg,var(--c4),#66bb6a);color:#fff;box-shadow:0 4px 15px rgba(76,175,80,.4);}
+.btn-success:hover:not(:disabled){filter:brightness(1.1);}
+.btn-danger{background:linear-gradient(135deg,#f44336,#e91e63);color:#fff;box-shadow:0 4px 15px rgba(244,67,54,.4);}
+.btn-danger:hover:not(:disabled){filter:brightness(1.1);}
+.btn-warning{background:linear-gradient(135deg,var(--c5),#fdd835);color:#fff;box-shadow:0 4px 15px rgba(255,152,0,.4);}
+.btn-warning:hover:not(:disabled){filter:brightness(1.1);}
+.btn-info{background:linear-gradient(135deg,#00bcd4,#03a9f4);color:#fff;box-shadow:0 4px 15px rgba(0,188,212,.4);}
+.btn-info:hover:not(:disabled){filter:brightness(1.1);}
+.btn-gray{background:rgba(255,255,255,.2);color:#fff;}
+.btn-gray:hover:not(:disabled){background:rgba(255,255,255,.3);}
+.btn-sm{padding:6px 14px;font-size:.85rem;}
+.btn-lg{padding:14px 32px;font-size:1.2rem;}
 
-    @keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
-    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-    @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(108,99,255,.4)}50%{box-shadow:0 0 22px rgba(108,99,255,.8),0 0 40px rgba(108,99,255,.3)}}
-    @keyframes twinkle{0%,100%{opacity:1}50%{opacity:.2}}
-    @keyframes slideUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes coinFall{0%{transform:translateY(-60px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(540deg);opacity:0}}
-    @keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
-    @keyframes diceRoll{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
-    .fade-in-up{animation:fadeInUp .4s ease-out}
-    .pop{animation:pop .4s ease-out}
-    .bounce{animation:bounce 1s infinite}
-    .glow{animation:glow 2s infinite}
-    .float{animation:float 3s ease-in-out infinite}
-    .coin-particle{position:fixed;pointer-events:none;z-index:9999;animation:coinFall 1.6s ease-in forwards}
+/* ===== Tab ===== */
+.tab{padding:8px 18px;border-radius:25px;font-weight:600;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.6);border:2px solid transparent;}
+.tab.active{background:var(--c1);color:#fff;border-color:var(--c1);}
 
-    .title-bg{background:linear-gradient(160deg,#0a0a1a,#1a1a3e,#0d2137);min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-    .star{position:absolute;background:white;border-radius:50%;animation:twinkle 2s infinite}
+/* ===== Player card ===== */
+.player-panel{border-radius:16px;padding:12px;border:2px solid transparent;transition:all .3s;}
+.player-panel.current{border-color:var(--c3);box-shadow:0 0 20px rgba(255,215,0,.4);}
 
-    .game-wrap{min-height:100vh;padding:10px}
+/* ===== Dice ===== */
+.dice-face{width:70px;height:70px;background:#fff;border-radius:14px;display:grid;place-items:center;font-size:2.5rem;color:#333;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .4s;}
+.dice-face.rolling{animation:rollDice .5s ease-out;}
+@keyframes rollDice{0%{transform:rotate(0);} 25%{transform:rotate(90deg);} 50%{transform:rotate(180deg);} 75%{transform:rotate(270deg);} 100%{transform:rotate(360deg);}}
 
-    .player-card{border-radius:14px;padding:10px 12px;border:2.5px solid transparent;transition:all .3s}
-    .player-card.active{border-color:#FFD700;animation:glow 2s infinite}
-    .player-card.human{background:rgba(99,102,241,.15)}
-    .player-card.ai{background:rgba(249,115,22,.12)}
+/* ===== Coin animation ===== */
+.coin{position:fixed;font-size:1.8rem;pointer-events:none;animation:coinFly 1.2s ease-out forwards;z-index:9999;}
+@keyframes coinFly{0%{transform:translateY(0) scale(1);opacity:1;}100%{transform:translateY(-120px) scale(0);opacity:0;}}
 
-    .dice-face{width:72px;height:72px;background:white;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:all .3s}
-    .dice-face.rolling{animation:diceRoll .15s infinite alternate}
+/* ===== Toast ===== */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:50px;font-weight:700;font-size:1rem;z-index:9999;animation:toastIn .3s ease-out;}
+@keyframes toastIn{from{transform:translateX(-50%) translateY(20px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
 
-    .tab-btn{padding:7px 14px;border-radius:50px;font-weight:700;cursor:pointer;transition:all .2s;border:2px solid rgba(255,255,255,.2);font-size:.8rem;background:transparent;color:rgba(255,255,255,.6);font-family:'Nunito',sans-serif}
-    .tab-btn.active{background:#6C63FF;color:white;border-color:#6C63FF}
+/* ===== Modal ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:8888;}
+.modal-box{max-width:480px;width:90%;border-radius:24px;overflow:hidden;}
 
-    .event-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
-    .event-card{border-radius:24px;padding:28px;text-align:center;max-width:380px;width:90%;animation:pop .4s ease-out}
+/* ===== Handoff ===== */
+#screen-handoff{position:fixed;inset:0;background:#0a0a1a;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:7777;}
+#screen-handoff.show{display:flex;}
 
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
-    .modal-box{background:#1e2a3a;border:1px solid rgba(255,255,255,.15);border-radius:22px;padding:24px;max-width:480px;width:92%;animation:pop .35s ease-out;max-height:88vh;overflow-y:auto;color:white}
+/* ===== Event card ===== */
+#event-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:7000;}
+#event-overlay.show{display:flex;}
+.event-card-big{width:260px;border-radius:24px;padding:30px 20px;text-align:center;background:linear-gradient(135deg,#1a1a2e,#16213e);border:3px solid var(--c3);box-shadow:0 0 40px rgba(255,215,0,.4);}
 
-    .pass-bg{min-height:100vh;background:linear-gradient(160deg,#0a0a1a,#1a1a3e,#0d2137);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-    .pass-card{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);border-radius:26px;padding:44px 36px;text-align:center;backdrop-filter:blur(12px);max-width:420px;width:90%;animation:slideUp .5s ease-out}
+/* ===== Shrine target modal ===== */
+#shrine-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:7500;}
+#shrine-overlay.show{display:flex;}
 
-    .log-item{padding:4px 10px;border-radius:7px;font-size:.78rem;font-weight:600;background:rgba(255,255,255,.06);border-left:3px solid #6C63FF;margin-bottom:3px;color:rgba(255,255,255,.85)}
+/* ===== Result screen ===== */
+.rank-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;margin-bottom:8px;}
+.rank-row.rank-1{background:linear-gradient(135deg,#ffd700,#ffb300);color:#333;}
+.rank-row.rank-2{background:linear-gradient(135deg,#ccc,#9e9e9e);color:#333;}
+.rank-row.rank-3{background:linear-gradient(135deg,#cd7f32,#8d4e0c);color:#fff;}
+.rank-row.rank-other{background:rgba(255,255,255,.15);}
 
-    .bar-wrap{background:rgba(255,255,255,.1);border-radius:50px;height:7px;overflow:hidden}
-    .bar-fill{height:100%;border-radius:50px;background:linear-gradient(135deg,#6C63FF,#06b6d4);transition:width .7s ease}
+/* ===== Setup screen ===== */
+.player-setup-row{display:flex;align-items:center;gap:8px;padding:10px;background:rgba(255,255,255,.08);border-radius:12px;margin-bottom:8px;}
 
-    .result-bg{min-height:100vh;background:linear-gradient(160deg,#0a0a1a,#1a1a3e);display:flex;align-items:center;justify-content:center;padding:16px}
+/* ===== Responsive ===== */
+@media(max-width:640px){
+  .btn-lg{font-size:1rem;padding:12px 24px;}
+  .dice-face{width:56px;height:56px;font-size:2rem;}
+}
 
-    .game-input{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);border-radius:10px;padding:6px 10px;color:white;font-family:'Nunito',sans-serif;font-weight:700;font-size:.95rem;outline:none;width:100%}
-    .game-input:focus{border-color:#6C63FF}
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.05);}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px;}
 
-    /* アクション選択カード */
-    .action-card{border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:14px;cursor:pointer;transition:all .25s;background:rgba(255,255,255,.05)}
-    .action-card:hover:not(.disabled){border-color:#6C63FF;background:rgba(108,99,255,.2);transform:translateY(-2px)}
-    .action-card.selected{border-color:#FFD700;background:rgba(255,215,0,.15)}
-    .action-card.disabled{opacity:.4;cursor:not-allowed}
+/* ===== Number badge ===== */
+.badge{display:inline-block;background:var(--c2);color:#fff;border-radius:50%;width:22px;height:22px;text-align:center;line-height:22px;font-size:.75rem;font-weight:700;}
 
-    /* コイン色 */
-    .coin-5{display:inline-flex;align-items:center;justify-content:center;background:#c84b00;color:white;border-radius:50%;width:30px;height:30px;font-size:.68rem;font-weight:900;box-shadow:inset 0 -2px 0 rgba(0,0,0,.3)}
-    .coin-10{display:inline-flex;align-items:center;justify-content:center;background:#888;color:white;border-radius:50%;width:32px;height:32px;font-size:.68rem;font-weight:900;box-shadow:inset 0 -2px 0 rgba(0,0,0,.3)}
-    .coin-50{display:inline-flex;align-items:center;justify-content:center;background:#d4af37;color:white;border-radius:50%;width:36px;height:36px;font-size:.7rem;font-weight:900;box-shadow:inset 0 -2px 0 rgba(0,0,0,.3)}
+/* ===== Action highlight ===== */
+.action-item{background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:14px;padding:12px;cursor:pointer;transition:all .2s;}
+.action-item:hover:not(.disabled){background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);}
+.action-item.disabled{opacity:.4;cursor:not-allowed;}
 
-    .player-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:12px;padding:9px 12px;border:2px solid rgba(255,255,255,.1);margin-bottom:8px;transition:border-color .2s}
-    .player-row.human-row{border-color:rgba(108,99,255,.5)}
-    .type-btn{border:2px solid rgba(255,255,255,.2);border-radius:50px;padding:4px 11px;font-weight:800;font-size:.75rem;cursor:pointer;transition:all .2s;background:transparent;color:rgba(255,255,255,.6);font-family:'Nunito',sans-serif}
-    .type-btn.human{border-color:#6C63FF;background:#6C63FF;color:white}
-    .type-btn.ai{border-color:#f97316;background:#f97316;color:white}
-
-    ::-webkit-scrollbar{width:5px}
-    ::-webkit-scrollbar-track{background:rgba(255,255,255,.05)}
-    ::-webkit-scrollbar-thumb{background:#6C63FF;border-radius:10px}
-
-    @media(max-width:640px){.action-cols{grid-template-columns:1fr!important}}
-  </style>
+/* ===== Company/Stock cards ===== */
+.item-card{background:rgba(255,255,255,.1);border-radius:12px;padding:10px;border:2px solid transparent;transition:all .2s;cursor:pointer;}
+.item-card:hover:not(.disabled){border-color:var(--c3);background:rgba(255,215,0,.1);}
+.item-card.disabled{opacity:.4;cursor:not-allowed;}
+.item-card.owned{border-color:var(--c4);background:rgba(76,175,80,.15);}
+</style>
 </head>
 <body>
-<div id="coinArea"></div>
+<div id="stars-bg"></div>
 
-<!-- =========================================================
-  画面①：タイトル
-========================================================= -->
-<div id="screen-title" class="screen active">
-  <div class="title-bg">
-    <div id="stars"></div>
-    <div class="text-center z-10 relative px-4">
-      <div class="float mb-4" style="font-size:5rem;filter:drop-shadow(0 0 28px gold)">💴</div>
-      <h1 style="font-size:clamp(1.8rem,8vw,3.4rem);font-weight:900;color:white;text-shadow:0 0 28px rgba(255,215,0,.8);line-height:1.2" class="mb-2">
-        もしもし投資ランド！
-      </h1>
-      <p style="color:#93c5fd;font-size:1rem;font-weight:700" class="mb-8">
-        💰 会社・株・貯金でお金持ちを目指せ！
-      </p>
-      <div class="flex flex-col gap-3 items-center max-w-xs mx-auto">
-        <button class="btn btn-primary w-full text-xl py-4 glow" onclick="showScreen('setup')">🚀 ゲームスタート！</button>
-        <button class="btn btn-yellow w-full text-base py-3" onclick="showRules()">📖 ルール説明</button>
+<!-- ================================================================
+  TITLE SCREEN
+================================================================ -->
+<div id="screen-title" class="screen active" style="position:relative;z-index:1;">
+  <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+    <div class="text-8xl mb-4 animate-bounce">💰</div>
+    <h1 class="text-5xl font-black mb-2" style="text-shadow:0 0 30px rgba(255,215,0,.8);">もしもし</h1>
+    <h1 class="text-5xl font-black mb-6" style="color:var(--c3);text-shadow:0 0 30px rgba(255,215,0,.8);">投資ランド！</h1>
+    <p class="text-lg opacity-80 mb-10">かぞくでたのしくおかねのべんきょう！</p>
+    <button class="btn btn-primary btn-lg mb-4" onclick="showScreen('title2')">
+      <i class="fas fa-play"></i> ゲームをはじめる
+    </button>
+    <button class="btn btn-info btn-lg mb-4" onclick="showTutorial()">
+      <i class="fas fa-book"></i> あそびかた
+    </button>
+  </div>
+</div>
+
+<!-- ================================================================
+  SETUP SCREEN 1: Player count
+================================================================ -->
+<div id="screen-title2" class="screen" style="position:relative;z-index:1;">
+  <div class="min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="card p-8 max-w-lg w-full text-center">
+      <div class="text-5xl mb-3">👥</div>
+      <h2 class="text-3xl font-black mb-6">なんにんで あそぶ？</h2>
+      <div class="grid grid-cols-5 gap-3 mb-6">
+        ${[2,3,4,5,6,7,8,9,10].map(n=>`
+        <button class="btn btn-gray" id="pcbtn-${n}" onclick="selectPlayerCount(${n})"
+          style="border-radius:14px;padding:14px 0;font-size:1.4rem;font-weight:900;">
+          ${n}
+        </button>`).join('')}
+        <!-- dummy for grid alignment -->
+        <div></div>
       </div>
-      <div class="mt-6 flex gap-4 justify-center flex-wrap" style="color:#93c5fd;font-size:.82rem;font-weight:700">
-        <span>👶 7さいから</span><span>🏦 会社経営</span><span>📈 株投資</span><span>🏧 ATM貯金</span>
+      <div class="flex gap-3 justify-center">
+        <button class="btn btn-gray" onclick="showScreen('title')">
+          <i class="fas fa-arrow-left"></i> もどる
+        </button>
+        <button class="btn btn-primary" id="toSetupBtn" disabled onclick="showScreen('setup')">
+          <i class="fas fa-arrow-right"></i> つぎへ
+        </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- =========================================================
-  画面②：ゲーム設定
-========================================================= -->
-<div id="screen-setup" class="screen">
-  <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="card-white p-6 max-w-lg w-full fade-in-up">
-      <h2 class="text-2xl font-black text-center mb-5" style="color:#1e3a5f">🎮 ゲーム設定</h2>
+<!-- ================================================================
+  SETUP SCREEN 2: Player names & game length
+================================================================ -->
+<div id="screen-setup" class="screen" style="position:relative;z-index:1;">
+  <div class="min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="card p-6 max-w-xl w-full">
+      <h2 class="text-2xl font-black text-center mb-4">⚙️ せっていをしよう</h2>
 
-      <div class="mb-4">
-        <label class="block font-black text-gray-700 mb-2">👥 人数</label>
-        <div class="grid grid-cols-4 gap-2" id="pcBtns">
-          ${[1,2,3,4].map(n=>`
-          <button onclick="selectPC(${n})" id="pc${n}"
-            class="py-3 rounded-xl font-black text-lg border-3 transition-all"
-            style="border:3px solid ${n===2?'#6C63FF':'#ddd'};background:${n===2?'#F3F0FF':'white'};color:${n===2?'#6C63FF':'#555'}">
-            ${n}人
-          </button>`).join('')}
-        </div>
+      <!-- Player names -->
+      <div id="player-setup-list" class="mb-6"></div>
+
+      <!-- Game length -->
+      <h3 class="text-lg font-bold mb-3 text-center">📅 ゲームのながさ</h3>
+      <div class="flex gap-3 justify-center mb-6">
+        ${[6,10,15].map(y=>`
+        <button class="btn btn-gray" id="ylbtn-${y}" onclick="selectGameLength(${y})">
+          <i class="fas fa-calendar"></i> ${y}年
+        </button>`).join('')}
       </div>
 
-      <div class="mb-5">
-        <label class="block font-black text-gray-700 mb-2">✏️ プレイヤー設定</label>
-        <div id="playerRowList"></div>
-        <p class="text-xs text-gray-400 font-semibold mt-1">💡「人間」は順番に操作 / 「AI」は自動でプレイ</p>
-      </div>
-
-      <div class="mb-5">
-        <label class="block font-black text-gray-700 mb-2">⏱️ 年数</label>
-        <div class="grid grid-cols-3 gap-2">
-          ${[
-            {y:6,  label:'短い',   emoji:'⚡'},
-            {y:10, label:'ふつう', emoji:'🎮'},
-            {y:15, label:'長い',   emoji:'🏆'},
-          ].map((g,i)=>`
-          <button onclick="selectYears(${g.y})" id="yr${g.y}"
-            class="year-btn py-3 rounded-xl font-black text-sm border-3 transition-all"
-            style="border:3px solid ${i===1?'#6C63FF':'#ddd'};background:${i===1?'#F3F0FF':'white'};color:${i===1?'#6C63FF':'#555'}">
-            ${g.emoji} ${g.label}<br><span style="font-size:.72rem">${g.y}年</span>
-          </button>`).join('')}
-        </div>
-      </div>
-
-      <div class="flex gap-3">
-        <button class="btn btn-primary flex-1 py-3 text-base" onclick="startGame()">🚀 スタート！</button>
-        <button style="color:#555;background:#f5f5f5;border:2px solid #ddd" class="rounded-full px-5 py-3 font-bold text-sm" onclick="showScreen('title')">← もどる</button>
+      <!-- Action buttons -->
+      <div class="flex gap-3 justify-center">
+        <button class="btn btn-gray" onclick="showScreen('title2')">
+          <i class="fas fa-arrow-left"></i> もどる
+        </button>
+        <button class="btn btn-success btn-lg" id="startGameBtn" onclick="startGame()">
+          <i class="fas fa-rocket"></i> ゲームスタート！
+        </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- =========================================================
-  画面③：パス（ホットシート引き継ぎ）
-========================================================= -->
-<div id="screen-pass" class="screen">
-  <div class="pass-bg">
-    <div id="passStars"></div>
-    <div class="pass-card z-10 relative">
-      <div style="font-size:4.5rem" class="bounce mb-3" id="passEmoji">🙈</div>
-      <h2 style="font-size:1.55rem;font-weight:900;color:white" class="mb-2" id="passTitle">端末を渡してね！</h2>
-      <p style="color:#93c5fd;font-weight:700;font-size:.95rem;line-height:1.6" class="mb-5" id="passDesc">次のプレイヤーが準備できたらボタンを押してね</p>
-      <div style="background:rgba(255,255,255,.1);border-radius:14px;padding:14px 18px" class="mb-5">
-        <div style="color:#fbbf24;font-size:.8rem;font-weight:800" class="mb-1">つぎのプレイヤー</div>
-        <div style="color:white;font-size:1.9rem;font-weight:900" id="passNextName">－</div>
-      </div>
-      <button class="btn btn-primary w-full text-base py-3 glow" onclick="onPassReady()">✅ 準備OK！スタート</button>
-    </div>
-  </div>
-</div>
+<!-- ================================================================
+  GAME SCREEN
+================================================================ -->
+<div id="screen-game" class="screen" style="position:relative;z-index:1;">
+  <div class="min-h-screen p-3">
 
-<!-- =========================================================
-  画面④：メインゲーム
-========================================================= -->
-<div id="screen-game" class="screen">
-  <div class="game-wrap">
-
-    <!-- ヘッダー -->
-    <div class="card p-3 mb-3">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-lg font-black text-white">💴 投資ランド</span>
-          <div class="rounded-full px-3 py-1" style="background:rgba(108,99,255,.3)">
-            <span class="font-bold text-purple-200 text-sm" id="yearDisplay">1年目 / 10年</span>
-          </div>
-          <div class="rounded-full px-3 py-1" id="eventBadge" style="display:none;background:rgba(255,165,0,.3)">
-            <span class="font-bold text-yellow-200 text-xs" id="eventBadgeText"></span>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button class="btn btn-yellow btn-sm" onclick="showRules()">📖</button>
-          <button class="btn btn-outline btn-sm" onclick="confirmQuit()">🚪</button>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">💰</span>
+        <div>
+          <div class="font-black text-xl" id="yearLabel">1年目</div>
+          <div class="text-sm opacity-70" id="turnOrderLabel"></div>
         </div>
       </div>
-      <div class="bar-wrap mt-2"><div class="bar-fill" id="yearProgress" style="width:10%"></div></div>
-    </div>
-
-    <div class="flex gap-3 flex-wrap lg:flex-nowrap">
-
-      <!-- 左：プレイヤー一覧 + ログ -->
-      <div class="w-full lg:w-52 flex-shrink-0">
-        <div id="playerCards" class="space-y-2 mb-3"></div>
-        <div class="card p-3">
-          <div class="font-black text-xs mb-2 text-purple-300">📜 きろく</div>
-          <div id="gameLog" class="space-y-1 max-h-44 overflow-y-auto"></div>
-        </div>
-      </div>
-
-      <!-- 右：アクションエリア -->
-      <div class="flex-1 min-w-0">
-
-        <!-- 現在プレイヤー情報 -->
-        <div class="card p-4 mb-3">
-          <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
-            <div>
-              <div class="text-xs text-gray-400 font-bold">いまのプレイヤー</div>
-              <div class="text-xl font-black text-white" id="curName">－</div>
-              <div class="text-xs mt-0.5" id="actionsLeftDisplay" style="color:#a78bfa;font-weight:800"></div>
-            </div>
-            <div class="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <div class="text-xs text-gray-400 font-bold">💵 現金</div>
-                <div class="text-xl font-black text-green-400" id="curCash">0円</div>
-              </div>
-              <div>
-                <div class="text-xs text-gray-400 font-bold">🏧 ATM</div>
-                <div class="text-xl font-black text-blue-400" id="curAtm">0円</div>
-              </div>
-              <div>
-                <div class="text-xs text-gray-400 font-bold">💎 総資産</div>
-                <div class="text-xl font-black text-yellow-400" id="curTotal">0円</div>
-              </div>
-            </div>
-          </div>
-          <!-- 所有物バッジ -->
-          <div class="flex flex-wrap gap-2" id="curAssets"></div>
-          <!-- 借金表示 -->
-          <div id="debtWarning" style="display:none" class="mt-2 text-xs text-red-400 font-black rounded-lg px-2 py-1" style="background:rgba(239,68,68,.1)"></div>
-        </div>
-
-        <!-- タブ -->
-        <div class="flex gap-2 mb-3 flex-wrap">
-          <button class="tab-btn active" id="tab-action"   onclick="switchTab('action')">🎮 アクション</button>
-          <button class="tab-btn"        id="tab-ranking"  onclick="switchTab('ranking')">🏆 じゅんい</button>
-          <button class="tab-btn"        id="tab-all"      onclick="switchTab('all')">👥 みんな</button>
-        </div>
-
-        <!-- ── アクションタブ ── -->
-        <div id="content-action">
-
-          <!-- サイコロ表示 -->
-          <div class="card p-4 mb-3 flex items-center gap-4">
-            <div id="diceDisplay" class="dice-face">🎲</div>
-            <div>
-              <div class="text-sm font-black text-white">🎲 今回のサイコロ</div>
-              <div class="text-xs text-gray-400 font-semibold mt-1" id="diceNote">アクションを選ぶと振られます</div>
-            </div>
-          </div>
-
-          <!-- イベントカード（年初） -->
-          <div class="card p-4 mb-3" id="eventArea" style="display:none">
-            <div class="text-sm font-black text-yellow-300 mb-2">🃏 あなたが今年の1番手！イベントカードを引いてください</div>
-            <button class="btn btn-yellow w-full py-3" onclick="drawEvent()">🃏 イベントカードを引く！</button>
-          </div>
-
-          <!-- 倒産処理エリア -->
-          <div id="bankruptArea" style="display:none" class="card p-4 mb-3">
-            <div class="text-sm font-black text-red-400 mb-3">🏚️ 倒産イベント！会社を売却しなければなりません</div>
-            <div id="bankruptSellList" class="space-y-2"></div>
-          </div>
-
-          <!-- メインアクション選択 -->
-          <div class="card p-4 mb-3" id="actionSelectArea">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-black text-white">⚡ アクションを選ぼう</h3>
-              <span class="text-xs font-black px-3 py-1 rounded-full" style="background:rgba(255,215,0,.2);color:#fbbf24">残り <span id="actLeft">1</span>回</span>
-            </div>
-
-            <div class="grid gap-3 action-cols" style="grid-template-columns:1fr 1fr" id="actionCards">
-              <!-- JS で生成 -->
-            </div>
-          </div>
-
-          <!-- ターン終了ボタン -->
-          <div class="card p-3">
-            <button class="btn btn-primary w-full text-base py-3" id="btnEndTurn" onclick="endTurn()">
-              ⏭️ ターンをおわる
-            </button>
-            <div class="text-xs text-center text-gray-400 font-semibold mt-1" id="actionMsg"></div>
-          </div>
-        </div>
-
-        <!-- ── ランキングタブ ── -->
-        <div id="content-ranking" style="display:none">
-          <div class="card p-4"><div id="rankingContent"></div></div>
-        </div>
-
-        <!-- ── 全員の状況タブ ── -->
-        <div id="content-all" style="display:none">
-          <div class="card p-4"><div id="allContent"></div></div>
-        </div>
+      <div class="flex gap-2">
+        <button class="btn btn-info btn-sm" onclick="showTutorial()"><i class="fas fa-book"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="confirmQuit()"><i class="fas fa-door-open"></i> やめる</button>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- =========================================================
-  画面⑤：結果発表
-========================================================= -->
-<div id="screen-result" class="screen">
-  <div class="result-bg">
-    <div class="card-white p-7 max-w-lg w-full text-center fade-in-up">
-      <div style="font-size:4rem" class="bounce mb-2">🏆</div>
-      <h2 class="text-2xl font-black mb-1" style="color:#1e3a5f">ゲーム終了！</h2>
-      <div class="text-base font-black mb-5 text-gray-600" id="winnerAnnounce"></div>
-      <div id="resultRanking" class="space-y-2 mb-5"></div>
-      <div class="bg-blue-50 rounded-2xl p-4 mb-5 text-left">
-        <h3 class="font-black text-blue-800 mb-2 text-sm">💡 しさんの内わけ</h3>
-        <div id="resultDetail" class="space-y-1 text-xs text-blue-700 font-semibold"></div>
+    <!-- Event badge -->
+    <div id="activeEventBadge" class="hidden mb-2 p-2 rounded-xl text-center font-bold text-sm"
+      style="background:rgba(255,215,0,.2);border:1px solid var(--c3);"></div>
+
+    <!-- Players overview -->
+    <div id="players-overview" class="grid gap-2 mb-3"></div>
+
+    <!-- Current player action area -->
+    <div class="card p-4 mb-3" id="action-area">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="text-2xl" id="cpEmoji">🧑</div>
+        <div>
+          <div class="font-black text-lg" id="cpName">プレイヤー</div>
+          <div class="text-sm opacity-70" id="cpStatus">アクション: 0/1</div>
+        </div>
+        <div class="ml-auto text-right">
+          <div class="text-xs opacity-60">手持ち</div>
+          <div class="font-black text-xl" id="cpCash" style="color:var(--c3);">0円</div>
+        </div>
       </div>
-      <div class="flex gap-3">
-        <button class="btn btn-primary flex-1 py-3" style="color:white" onclick="showScreen('setup')">🔄 もう一度</button>
-        <button class="btn flex-1 py-3" style="background:#1e3a5f;color:white" onclick="showScreen('title')">🏠 タイトルへ</button>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-3 flex-wrap">
+        <button class="tab active" data-tab="actions" onclick="switchTab('actions')">🎯 アクション</button>
+        <button class="tab" data-tab="portfolio" onclick="switchTab('portfolio')">📊 じぶんの資産</button>
+        <button class="tab" data-tab="market" onclick="switchTab('market')">🏪 マーケット</button>
+        <button class="tab" data-tab="ranking" onclick="switchTab('ranking')">🏆 ランキング</button>
+        <button class="tab" data-tab="log" onclick="switchTab('log')">📋 ログ</button>
+      </div>
+
+      <!-- Tab: Actions -->
+      <div id="tab-actions" class="tab-content">
+        <div id="actionMsg" class="text-sm text-center opacity-70 mb-3"></div>
+        <div class="grid grid-cols-2 gap-3 mb-4" id="action-buttons">
+          <!-- generated by renderActions() -->
+        </div>
+        <!-- End turn -->
+        <button class="btn btn-warning w-full" id="endTurnBtn" onclick="doEndTurn()">
+          <i class="fas fa-forward"></i> ターンを終わらせる
+        </button>
+      </div>
+
+      <!-- Tab: Portfolio -->
+      <div id="tab-portfolio" class="tab-content hidden">
+        <div id="portfolio-content"></div>
+      </div>
+
+      <!-- Tab: Market -->
+      <div id="tab-market" class="tab-content hidden">
+        <div id="market-content"></div>
+      </div>
+
+      <!-- Tab: Ranking -->
+      <div id="tab-ranking" class="tab-content hidden">
+        <div id="ranking-content"></div>
+      </div>
+
+      <!-- Tab: Log -->
+      <div id="tab-log" class="tab-content hidden">
+        <div id="log-content" class="text-sm space-y-1 max-h-64 overflow-y-auto"></div>
       </div>
     </div>
+
+    <!-- ATM detail (shown in actions) -->
+    <div id="atm-panel" class="card p-4 mb-3 hidden">
+      <h3 class="font-bold mb-3">🏧 ATM</h3>
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-xs opacity-60">現在のATM残高</div>
+          <div class="text-2xl font-black" id="atmBalance" style="color:#00bcd4;">0円</div>
+          <div class="text-xs opacity-60 mt-1" id="atmInterestInfo">利息: 0円/年</div>
+        </div>
+        <div class="text-3xl">💳</div>
+      </div>
+      <div class="flex gap-2 mb-2">
+        <input type="number" id="atmAmount" placeholder="金額" min="100" step="100"
+          class="flex-1 rounded-xl px-3 py-2 text-black font-bold">
+        <button class="btn btn-success btn-sm" onclick="doDeposit()">💰 預ける</button>
+        <button class="btn btn-warning btn-sm" onclick="doWithdraw()">💸 引き出す</button>
+      </div>
+    </div>
+
+    <!-- Dice panel (shown for company/stock actions) -->
+    <div id="dice-panel" class="card p-4 mb-3 hidden text-center">
+      <h3 class="font-bold mb-3" id="dicePanelTitle">🎲 サイコロをふろう！</h3>
+      <div class="flex justify-center mb-4">
+        <div class="dice-face" id="diceDisplay">🎲</div>
+      </div>
+      <div id="diceResult" class="text-lg font-bold mb-3 min-h-8"></div>
+      <button class="btn btn-primary btn-lg" id="rollBtn" onclick="rollDice()">
+        <i class="fas fa-dice"></i> ふる！
+      </button>
+      <button class="btn btn-gray mt-2" onclick="cancelDice()">キャンセル</button>
+    </div>
+
+    <!-- Lend panel -->
+    <div id="lend-panel" class="card p-4 mb-3 hidden">
+      <h3 class="font-bold mb-3">🏦 融資する</h3>
+      <select id="lendTarget" class="w-full rounded-xl px-3 py-2 text-black font-bold mb-2">
+        <option value="">-- プレイヤーを選ぶ --</option>
+      </select>
+      <input type="number" id="lendAmount" placeholder="金額" min="500" step="500"
+        class="w-full rounded-xl px-3 py-2 text-black font-bold mb-2">
+      <div class="text-xs opacity-60 mb-2">貸付金額2500円未満→年利500円、2500円以上→年利1000円</div>
+      <div class="flex gap-2">
+        <button class="btn btn-success flex-1" onclick="doLend()">💰 融資する</button>
+        <button class="btn btn-gray" onclick="hideLendPanel()">キャンセル</button>
+      </div>
+    </div>
+
+    <!-- Repay panel -->
+    <div id="repay-panel" class="card p-4 mb-3 hidden">
+      <h3 class="font-bold mb-3">💳 返済する</h3>
+      <div id="repay-list"></div>
+      <button class="btn btn-gray mt-2" onclick="hideRepayPanel()">とじる</button>
+    </div>
+
   </div>
 </div>
 
-<!-- =========================================================
-  イベントカード演出オーバーレイ
-========================================================= -->
-<div id="eventOverlay" class="event-overlay" style="display:none">
-  <div style="max-width:400px;width:90%;text-align:center">
-    <h2 class="text-2xl font-black text-white mb-4">🃏 イベントカード！</h2>
-    <div id="eventCardDisplay" class="event-card mb-5"></div>
-    <button class="btn btn-primary text-lg py-3 px-10" onclick="dismissEvent()">OK！つぎへ →</button>
+<!-- ================================================================
+  HANDOFF SCREEN (pass to next player)
+================================================================ -->
+<div id="screen-handoff">
+  <div class="text-center p-8">
+    <div class="text-8xl mb-6 animate-pulse">🔒</div>
+    <h2 class="text-3xl font-black mb-3" id="handoffTitle">端末を渡してください</h2>
+    <p class="text-lg opacity-80 mb-2" id="handoffSub">次のプレイヤー：<span id="handoffPlayerName" class="font-black" style="color:var(--c3);"></span></p>
+    <p class="text-sm opacity-50 mb-10">（画面を見えないようにして渡してください）</p>
+    <button class="btn btn-success btn-lg" onclick="readyHandoff()">
+      <i class="fas fa-check-circle"></i> <span id="handoffReadyLabel">準備できた！</span>
+    </button>
   </div>
 </div>
 
-<!-- =========================================================
-  アクション詳細モーダル（会社・株・ATM等）
-========================================================= -->
-<div id="actionModal" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <div id="actionModalContent"></div>
+<!-- ================================================================
+  EVENT CARD OVERLAY
+================================================================ -->
+<div id="event-overlay">
+  <div class="event-card-big">
+    <div class="text-6xl mb-3" id="eventEmoji">🎴</div>
+    <div class="text-xl font-black mb-2" id="eventName">イベント</div>
+    <div class="text-sm opacity-80 mb-6" id="eventDesc"></div>
+    <button class="btn btn-warning w-full" onclick="dismissEvent()">
+      <i class="fas fa-check"></i> わかった！
+    </button>
   </div>
 </div>
 
-<!-- =========================================================
-  神社ターゲット選択モーダル
-========================================================= -->
-<div id="shrineModal" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <h3 class="text-lg font-black mb-3">⛩️ 神社：お金をもらう相手を選んでください</h3>
-    <p class="text-sm text-gray-300 mb-3" id="shrineDesc"></p>
-    <div id="shrineTargetList" class="space-y-2 mb-4"></div>
-    <button class="btn btn-primary w-full py-2" onclick="confirmShrineTarget()">✅ 決定</button>
-    <button class="btn btn-outline w-full py-2 mt-2" onclick="closeShrineModal()">キャンセル</button>
+<!-- ================================================================
+  SHRINE TARGET OVERLAY
+================================================================ -->
+<div id="shrine-overlay">
+  <div class="card p-6 max-w-sm w-full text-center">
+    <div class="text-5xl mb-3">⛩️</div>
+    <h3 class="text-xl font-black mb-2">お金をもらう相手を選ぼう！</h3>
+    <p class="text-sm opacity-70 mb-1" id="shrineAmountLabel"></p>
+    <div id="shrine-targets" class="space-y-2 mb-4"></div>
   </div>
 </div>
 
-<!-- =========================================================
-  確認モーダル
-========================================================= -->
-<div id="confirmModal" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <h3 class="text-lg font-black mb-3" id="confirmTitle"></h3>
-    <div id="confirmBody" class="mb-5 text-gray-200 text-sm font-semibold"></div>
+<!-- ================================================================
+  CONFIRM MODAL
+================================================================ -->
+<div id="confirm-modal" class="modal-overlay hidden">
+  <div class="modal-box card-white p-6">
+    <h3 class="text-xl font-black mb-2 text-center" id="confirmTitle">確認</h3>
+    <div class="mb-4 text-center" id="confirmBody"></div>
     <div class="flex gap-3">
-      <button class="btn btn-primary flex-1 py-2" id="confirmOkBtn" onclick="onConfirmOk()">✅ 決定！</button>
-      <button class="btn btn-outline flex-1 py-2" onclick="closeConfirm()">キャンセル</button>
+      <button class="btn btn-gray flex-1" onclick="closeConfirm()">❌ キャンセル</button>
+      <button class="btn btn-primary flex-1" id="confirmOkBtn" onclick="onConfirmOk()">✅ 決定！</button>
     </div>
   </div>
 </div>
 
-<!-- =========================================================
-  ルール説明モーダル
-========================================================= -->
-<div id="rulesModal" class="modal-overlay" style="display:none">
-  <div class="modal-box" style="max-width:520px">
+<!-- ================================================================
+  TUTORIAL MODAL
+================================================================ -->
+<div id="tutorial-modal" class="modal-overlay hidden">
+  <div class="modal-box card p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-black">📖 ルール説明</h2>
-      <button onclick="closeRules()" class="text-gray-400 text-2xl leading-none">✕</button>
+      <h2 class="text-xl font-black">📖 あそびかた</h2>
+      <button class="btn btn-gray btn-sm" onclick="closeTutorial()">✕</button>
     </div>
-    <div class="space-y-3 max-h-[70vh] overflow-y-auto text-sm font-semibold">
-
-      <div class="rounded-xl p-3" style="background:rgba(108,99,255,.15)">
-        <div class="font-black text-purple-300 mb-1">🎯 目標・勝利条件</div>
-        <div class="text-gray-300">ゲーム終了時に「現金 ＋ ATM残高 ＋ 株の価値」の合計が一番多い人の勝ち！<br>※ 会社は資産に含まれない</div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(251,191,36,.1)">
-        <div class="font-black text-yellow-300 mb-1">💴 お金・スタート</div>
-        <div class="text-gray-300">全員に最初から15円。単位：5円・10円・50円コイン</div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(34,197,94,.1)">
-        <div class="font-black text-green-300 mb-2">⚡ 1年の流れ</div>
-        <div class="text-gray-300 space-y-1 text-xs">
-          <div>① ATM残高が多い順でターンが回ってくる（2年目以降）</div>
-          <div>② 1年の最初の人がイベントカードを引く（2年目以降）</div>
-          <div>③ 1回のアクション（バス/鉄道で最大2回）を選ぶ</div>
-          <div>④ ターン終了時にATM利息が自動加算</div>
-        </div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(59,130,246,.1)">
-        <div class="font-black text-blue-300 mb-2">🎮 アクションの種類（1ターン1回）</div>
-        <div class="space-y-1 text-gray-300 text-xs">
-          <div>🏢 <b>会社を買う / 収益を得る</b>：会社を購入するかサイコロを振る</div>
-          <div>📈 <b>株を買う</b>：日本株10円 or 外国株20円を購入しサイコロ判定</div>
-          <div>💼 <b>働く</b>：5円もらえる（就労支援時は15円）</div>
-          <div>🏧 <b>ATMに預ける</b>：現金をATMへ（ターン末に利息がもらえる）</div>
-        </div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(239,68,68,.1)">
-        <div class="font-black text-red-300 mb-2">🏢 会社の種類</div>
-        <div class="space-y-2 text-gray-300 text-xs">
-          <div>🍜 <b>飲食店（10円）</b>：1-2→-10円 / 3-4→+10円 / 5-6→+30円<br>　100円でアップグレード可</div>
-          <div>⭐ <b>三ツ星レストラン</b>：1→-10円 / 2-6→+40円</div>
-          <div>🏦 <b>金融機関（50円）</b>：いつでも融資できる。〜50円→年10円利息 / 51円〜→年20円利息</div>
-          <div>🚌 <b>バス会社（20円）</b>：5-6が出たら追加行動1回。100円で鉄道にアップグレード可</div>
-          <div>🚃 <b>鉄道会社</b>：5-6が出たらもう一度ターンが回ってくる</div>
-          <div>⛩️ <b>神社（50円）</b>：1-2→好きな人から50円 / 3-4→好きな人から25円</div>
-        </div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(168,85,247,.1)">
-        <div class="font-black text-purple-300 mb-2">📈 株</div>
-        <div class="space-y-1 text-gray-300 text-xs">
-          <div>🗾 <b>日本株（10円）</b>：偶数→+30円 / 奇数→-20円</div>
-          <div>🌍 <b>外国株（20円）</b>：偶数→+50円 / 奇数→-30円</div>
-          <div>株は何株でも持てる。購入と同時にサイコロ判定！</div>
-        </div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(20,184,166,.1)">
-        <div class="font-black text-teal-300 mb-2">🏧 ATM利息（ターン終了時に自動追加）</div>
-        <div class="grid grid-cols-2 gap-1 text-gray-300 text-xs">
-          <div>15〜30円: +5円</div><div>35〜50円: +10円</div>
-          <div>55〜70円: +15円</div><div>75円以上: +30円</div>
-        </div>
-      </div>
-
-      <div class="rounded-xl p-3" style="background:rgba(239,68,68,.08)">
-        <div class="font-black text-orange-300 mb-2">🃏 イベントカード（10種）</div>
-        <div class="space-y-1 text-gray-300 text-xs">
-          <div>📈 インフレーション：会社の利益が2倍</div>
-          <div>📉 デフレーション：会社の損失が2倍</div>
-          <div>💼 就労支援：働くと15円（3倍）</div>
-          <div>🚀 株価高騰：購入価格・配当が2倍</div>
-          <div>💥 株価暴落：購入価格・配当が半分</div>
-          <div>🏚️ 倒産：引いた人は会社を売却</div>
-          <div>💰 利息UP：ATM利息が2倍</div>
-          <div>🎲 偶数確定：全員のサイコロが偶数</div>
-          <div>🎲 奇数確定：全員のサイコロが奇数</div>
-          <div>🤝 投資家イベント：資産最少の人が全員から30円もらう</div>
-        </div>
-      </div>
-    </div>
-    <button class="btn btn-primary w-full mt-4 py-2" onclick="closeRules()">とじる</button>
+    <div id="tutorial-content" class="text-sm space-y-3"></div>
   </div>
 </div>
 
+<!-- ================================================================
+  RESULT SCREEN
+================================================================ -->
+<div id="screen-result" class="screen" style="position:relative;z-index:1;">
+  <div class="min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="card p-6 max-w-lg w-full">
+      <div class="text-center mb-6">
+        <div class="text-6xl mb-2">🏆</div>
+        <h2 class="text-3xl font-black mb-1">ゲーム終了！</h2>
+        <p class="opacity-70" id="resultYears"></p>
+      </div>
+      <div id="result-ranks" class="mb-6"></div>
+      <div class="text-center space-y-3">
+        <h3 class="font-bold text-lg">📚 きょう学んだこと</h3>
+        <div id="result-lesson" class="text-sm opacity-80 leading-relaxed"></div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button class="btn btn-primary flex-1" onclick="backToTitle()">
+          <i class="fas fa-home"></i> タイトルへ
+        </button>
+        <button class="btn btn-success flex-1" onclick="replayGame()">
+          <i class="fas fa-redo"></i> もう一度！
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+  JAVASCRIPT
+================================================================ -->
 <script>
 // ============================================================
-// グローバル状態
+// State
 // ============================================================
-let G = null
-let selectedPC  = 2
-let selectedYrs = 10
-let playerCfgs  = [{name:'プレイヤー1',isAI:false},{name:'プレイヤー2',isAI:false}]
-let confirmCB   = null
+let G = null          // game state from server
+let selectedPlayerCount = 0
+let selectedGameLength = 10
+let playerConfigs = []
+let confirmCallback = null
+let diceContext = null   // {type:'company'|'stock', id:string}
 let processingAction = false
-let shrineSelections = {}
-let pendingShrineAmount = 0
+
+const PLAYER_EMOJIS = ['🧑','👧','🧒','👦','🙋','🧑‍🦱','🧑‍🦰','👱','🧑‍🦳','🧑‍🦲']
+const PLAYER_COLORS = ['#6C63FF','#FF6584','#4CAF50','#FF9800','#00BCD4','#9C27B0','#F44336','#2196F3','#8BC34A','#FF5722']
 
 // ============================================================
-// 画面切替
+// Utilities
 // ============================================================
+function fmt(n){ return (n||0).toLocaleString()+'円' }
+function yen(n){ return (n||0).toLocaleString() }
+
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'))
-  document.getElementById('screen-'+name).classList.add('active')
-  window.scrollTo(0,0)
+  const el = document.getElementById('screen-'+name)
+  if(el) el.classList.add('active')
 }
 
-// ============================================================
-// 星生成
-// ============================================================
-function generateStars(id='stars',n=80){
-  const c=document.getElementById(id); if(!c)return; c.innerHTML=''
-  for(let i=0;i<n;i++){
-    const s=document.createElement('div'); s.className='star'
-    const sz=Math.random()*3+1
-    s.style.cssText=\`width:\${sz}px;height:\${sz}px;left:\${Math.random()*100}%;top:\${Math.random()*100}%;animation-delay:\${Math.random()*3}s;animation-duration:\${Math.random()*2+1}s;\`
-    c.appendChild(s)
+function generateStars(){
+  const bg = document.getElementById('stars-bg')
+  for(let i=0;i<100;i++){
+    const s = document.createElement('div')
+    s.className='star'
+    s.style.left = Math.random()*100+'%'
+    s.style.top  = Math.random()*100+'%'
+    s.style.setProperty('--dur',(2+Math.random()*4)+'s')
+    s.style.animationDelay = Math.random()*4+'s'
+    bg.appendChild(s)
   }
 }
+generateStars()
 
 // ============================================================
-// 設定画面
+// Setup
 // ============================================================
-function selectPC(n){
-  selectedPC=n
-  document.querySelectorAll('#pcBtns button').forEach((b,i)=>{
-    const sel=i+1===n
-    b.style.borderColor=sel?'#6C63FF':'#ddd'
-    b.style.background =sel?'#F3F0FF':'white'
-    b.style.color      =sel?'#6C63FF':'#555'
+function selectPlayerCount(n){
+  selectedPlayerCount = n
+  document.querySelectorAll('[id^="pcbtn-"]').forEach(b=>{
+    b.classList.toggle('btn-primary', parseInt(b.id.split('-')[1])===n)
+    b.classList.toggle('btn-gray',   parseInt(b.id.split('-')[1])!==n)
   })
-  buildPlayerRows()
+  document.getElementById('toSetupBtn').disabled = false
+  buildPlayerSetupList(n)
 }
 
-function selectYears(y){
-  selectedYrs=y
-  document.querySelectorAll('.year-btn').forEach(b=>{
-    const sel=b.id==='yr'+y
-    b.style.borderColor=sel?'#6C63FF':'#ddd'
-    b.style.background =sel?'#F3F0FF':'white'
-    b.style.color      =sel?'#6C63FF':'#555'
+function selectGameLength(y){
+  selectedGameLength = y
+  document.querySelectorAll('[id^="ylbtn-"]').forEach(b=>{
+    const yy = parseInt(b.id.split('-')[1])
+    b.classList.toggle('btn-primary',yy===y)
+    b.classList.toggle('btn-gray',yy!==y)
   })
 }
 
-function buildPlayerRows(){
-  const n=selectedPC
-  while(playerCfgs.length<n) playerCfgs.push({name:'プレイヤー'+(playerCfgs.length+1),isAI:false})
-  playerCfgs=playerCfgs.slice(0,n)
-  const EMOJIS=['🟣','🟠','🟢','🔴']
-  document.getElementById('playerRowList').innerHTML=playerCfgs.map((p,i)=>\`
-    <div class="player-row \${p.isAI?'':'human-row'}" id="prow\${i}">
-      <span style="font-size:1.2rem">\${EMOJIS[i]}</span>
-      <input type="text" maxlength="10" value="\${esc(p.name)}"
-        oninput="playerCfgs[\${i}].name=this.value"
-        class="flex-1 border-2 rounded-lg px-2 py-1 text-sm font-bold outline-none"
-        style="border-color:#c084fc;min-width:0;color:#1e3a5f"
-        onfocus="this.style.borderColor='#6C63FF'" onblur="this.style.borderColor='#c084fc'">
-      <button class="type-btn \${p.isAI?'ai':'human'}" onclick="toggleType(\${i})">\${p.isAI?'🤖 AI':'👤 人間'}</button>
+function buildPlayerSetupList(n){
+  playerConfigs = Array.from({length:n},(_, i)=>({
+    name: 'プレイヤー'+(i+1),
+    isAI: false
+  }))
+  renderPlayerSetupList()
+}
+
+function renderPlayerSetupList(){
+  const el = document.getElementById('player-setup-list')
+  el.innerHTML = playerConfigs.map((p,i)=>\`
+    <div class="player-setup-row">
+      <span style="font-size:1.6rem;">\${PLAYER_EMOJIS[i]}</span>
+      <input
+        class="flex-1 rounded-xl px-3 py-2 text-black font-bold"
+        value="\${p.name}"
+        placeholder="なまえ"
+        oninput="playerConfigs[\${i}].name=this.value"
+        style="min-width:80px;"
+      >
+      <button
+        class="btn btn-sm \${p.isAI?'btn-warning':'btn-info'}"
+        onclick="toggleAI(\${i})"
+        style="min-width:60px;"
+      >
+        \${p.isAI?'🤖 AI':'👤 人'}
+      </button>
     </div>
   \`).join('')
 }
 
-function toggleType(i){
-  playerCfgs[i].isAI=!playerCfgs[i].isAI
-  buildPlayerRows()
+function toggleAI(i){
+  playerConfigs[i].isAI = !playerConfigs[i].isAI
+  renderPlayerSetupList()
 }
 
-// ============================================================
-// ゲームスタート
-// ============================================================
 async function startGame(){
-  document.querySelectorAll('#playerRowList input').forEach((inp,i)=>{
-    if(playerCfgs[i]) playerCfgs[i].name=inp.value.trim()||('プレイヤー'+(i+1))
-  })
-  showScreen('game')
-  setMsg('⌛ 準備中...')
+  if(!selectedGameLength){
+    showToast('ゲームのながさを選んでね！','error')
+    return
+  }
+  const btn = document.getElementById('startGameBtn')
+  btn.disabled = true
+  btn.textContent = '🔄 ロード中...'
+
   try{
-    const res=await fetch('/api/game/start',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({players:playerCfgs,maxYears:selectedYrs})})
-    const d=await res.json()
-    if(d.success){ G=d.state; renderGame(); setMsg(''); spawnCoins(5) }
-  }catch(e){ setMsg('❌ エラー') }
+    const res = await fetch('/api/game/start',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        players: playerConfigs,
+        maxYears: selectedGameLength
+      })
+    })
+    const data = await res.json()
+    if(!data.success) throw new Error(data.error)
+    G = data.state
+    showScreen('game')
+    renderGame()
+    spawnCoins(10)
+    showToast('🎮 ゲームスタート！','info')
+  } catch(e){
+    showToast('エラー: '+e.message,'error')
+  } finally{
+    btn.disabled = false
+    btn.innerHTML = '<i class="fas fa-rocket"></i> ゲームスタート！'
+  }
 }
 
 // ============================================================
-// パス画面
-// ============================================================
-function showPass(idx){
-  if(!G)return
-  const p=G.players[idx]
-  document.getElementById('passNextName').textContent=(p.isAI?'🤖 ':'👤 ')+p.name
-  document.getElementById('passTitle').textContent=p.isAI?'🤖 AI のターン':'📱 端末を渡してね！'
-  document.getElementById('passDesc').textContent=p.isAI?'AIが自動でプレイします。':'「'+p.name+'」さん、準備OKになったらボタンを押してね！'
-  document.getElementById('passEmoji').textContent=p.isAI?'🤖':'🙈'
-  generateStars('passStars',50)
-  showScreen('pass')
-}
-
-function onPassReady(){
-  showScreen('game')
-  renderGame()
-}
-
-// ============================================================
-// メイン描画
+// Render Game
 // ============================================================
 function renderGame(){
-  if(!G)return
-  const cp=G.players[G.currentPlayer]
+  if(!G) return
+  const cp = G.players[G.currentPlayer]
 
-  // ヘッダー
-  document.getElementById('yearDisplay').textContent=\`\${G.year}年目 / \${G.maxYears}年\`
-  document.getElementById('yearProgress').style.width=Math.min(100,Math.round(G.year/G.maxYears*100))+'%'
+  // Header
+  document.getElementById('yearLabel').textContent = G.year+'年目 / '+G.maxYears+'年'
+  document.getElementById('turnOrderLabel').textContent =
+    '順番: '+G.turnOrder.map(id=>G.players[id].name).join(' → ')
 
-  // イベント効果バッジ
-  const effs=Object.entries(G.eventEffects).filter(([,v])=>v).map(([k])=>({
-    inflation:'📈インフレ',deflation:'📉デフレ',workBonus:'💼就労3倍',
-    stockUp:'🚀株高騰',stockDown:'💥株暴落',interestUp:'💰利息2倍',
-    forceEven:'🎲偶数確定',forceOdd:'🎲奇数確定'
-  }[k])).filter(Boolean)
-  const eb=document.getElementById('eventBadge')
-  if(effs.length>0){eb.style.display='';document.getElementById('eventBadgeText').textContent=effs.join(' ')}
-  else eb.style.display='none'
-
-  // 現在プレイヤー情報
-  document.getElementById('curName').textContent=(cp.isAI?'🤖 ':'👤 ')+cp.name
-  document.getElementById('curCash').textContent=cp.cash+'円'
-  document.getElementById('curAtm').textContent=cp.atm+'円'
-  document.getElementById('curTotal').textContent=cp.totalAssets+'円'
-  document.getElementById('actionsLeftDisplay').textContent=\`行動：残り\${cp.actionsLeft}回\`
-  document.getElementById('actLeft').textContent=cp.actionsLeft
-
-  // 所有物バッジ
-  const badges=[]
-  for(const cid of cp.companies){
-    const def=COMPANY_DEF(cid); if(!def)continue
-    badges.push(\`<span class="rounded-full px-2 py-0.5 text-xs font-black" style="background:rgba(255,165,0,.25);color:#fbbf24">\${def.emoji}\${def.name}</span>\`)
+  // Active event badge
+  const evBadge = document.getElementById('activeEventBadge')
+  if(G.activeEventTypes.length>0 || G.diceFixed){
+    const labels = []
+    if(G.diceFixed==='even') labels.push('🎲 サイコロ偶数固定')
+    if(G.diceFixed==='odd')  labels.push('🎲 サイコロ奇数固定')
+    G.activeEventTypes.forEach(t=>{
+      const m={'company_profit_x2':'📈 会社利益2倍','company_loss_x2':'📉 会社損害2倍',
+        'work_x3':'👷 労働報酬3倍','stock_x2':'🚀 株2倍','stock_half':'💥 株半値',
+        'interest_x2':'💰 利息2倍'}
+      if(m[t]) labels.push(m[t])
+    })
+    evBadge.textContent = '✨ 今年のイベント: '+labels.join(' / ')
+    evBadge.classList.remove('hidden')
+  } else {
+    evBadge.classList.add('hidden')
   }
-  if(cp.stocks.japan>0)   badges.push(\`<span class="rounded-full px-2 py-0.5 text-xs font-black" style="background:rgba(59,130,246,.25);color:#93c5fd">🗾日本株×\${cp.stocks.japan}</span>\`)
-  if(cp.stocks.foreign>0) badges.push(\`<span class="rounded-full px-2 py-0.5 text-xs font-black" style="background:rgba(168,85,247,.25);color:#d8b4fe">🌍外国株×\${cp.stocks.foreign}</span>\`)
-  document.getElementById('curAssets').innerHTML=badges.join('')
 
-  // 借金表示
-  const dw=document.getElementById('debtWarning')
-  if(cp.debt>0){ dw.style.display=''; dw.textContent=\`💳 借金: \${cp.debt}円（毎ターン\${cp.debtPerTurn}円返済）\` }
-  else dw.style.display='none'
+  // Players overview
+  renderPlayersOverview()
 
-  renderPlayerCards()
-  renderActionCards()
+  // Current player header
+  document.getElementById('cpEmoji').textContent = PLAYER_EMOJIS[cp.id]
+  document.getElementById('cpName').textContent  = cp.name + (cp.isAI?' (AI)':'')
+  const maxAct = cp.extraAction ? 2 : 1
+  document.getElementById('cpStatus').textContent =
+    'アクション: '+cp.actionUsed+'/'+maxAct+(cp.extraTurn?' ⚠️再ターンあり':'')
+  document.getElementById('cpCash').textContent = fmt(cp.cash)
+
+  renderActions()
+  renderPortfolio()
+  renderMarket()
+  renderRanking()
   renderLog()
-
-  if(document.getElementById('tab-ranking').classList.contains('active')) renderRanking()
-  if(document.getElementById('tab-all').classList.contains('active')) renderAll()
-
-  if(G.gameOver){ setTimeout(showResult,800); return }
 }
 
-// ============================================================
-// プレイヤーカード（左側）
-// ============================================================
-function renderPlayerCards(){
-  const maxA=Math.max(...G.players.map(p=>p.totalAssets),1)
-  document.getElementById('playerCards').innerHTML=G.players.map((p,i)=>{
-    const act=i===G.currentPlayer
-    return \`<div class="player-card \${act?'active':''} \${p.isAI?'ai':'human'}">
-      <div class="flex items-center gap-2 mb-0.5">
-        <span>\${p.isAI?'🤖':'👤'}</span>
-        <span class="font-black text-xs flex-1 truncate text-white">\${esc(p.name)}</span>
-        \${act?'<span class="text-xs px-2 rounded-full font-black" style="background:#FFD700;color:#1a1a1a">NOW</span>':''}
+function renderPlayersOverview(){
+  const el = document.getElementById('players-overview')
+  const cols = G.players.length <= 4 ? 'grid-cols-2' :
+               G.players.length <= 6 ? 'grid-cols-3' : 'grid-cols-4'
+  el.className = 'grid gap-2 mb-3 '+cols
+
+  el.innerHTML = G.players.map(p=>{
+    const isCurrent = p.id === G.currentPlayer
+    return \`
+    <div class="player-panel \${isCurrent?'current':''}" style="background:rgba(255,255,255,0.08);">
+      <div class="flex items-center gap-1 mb-1">
+        <span>\${PLAYER_EMOJIS[p.id]}</span>
+        <span class="font-bold text-sm truncate">\${p.name}\${p.isAI?' 🤖':''}</span>
+        \${isCurrent?'<span class="ml-auto text-xs" style="color:var(--c3);">▶ 今</span>':''}
       </div>
-      <div class="flex gap-2 text-xs font-bold text-gray-300">
-        <span>💵\${p.cash}</span><span>🏧\${p.atm}</span>
+      <div class="text-xs space-y-0.5">
+        <div>💵 手持: <span class="font-bold">\${fmt(p.cash)}</span></div>
+        <div>🏧 ATM: <span class="font-bold">\${fmt(p.atm)}</span></div>
+        <div>📊 総資産: <span class="font-bold" style="color:var(--c3);">\${fmt(p.totalAssets)}</span></div>
       </div>
-      <div class="text-xs font-black text-yellow-300">総資産\${p.totalAssets}円</div>
-      <div class="bar-wrap mt-1"><div class="bar-fill" style="width:\${Math.round(p.totalAssets/maxA*100)}%"></div></div>
-    </div>\`
+    </div>
+    \`
   }).join('')
 }
 
-// ============================================================
-// アクションカード生成
-// ============================================================
-const COMPANY_LIST=[
-  {id:'restaurant', name:'飲食店',    emoji:'🍜', cost:10,  upgTo:'restaurant3',upgCost:100},
-  {id:'restaurant3',name:'三ツ星レストラン',emoji:'⭐', cost:100, upgTo:null,isUpg:true},
-  {id:'bank',       name:'金融機関',  emoji:'🏦', cost:50,  upgTo:null},
-  {id:'bus',        name:'バス会社',  emoji:'🚌', cost:20,  upgTo:'train',upgCost:100},
-  {id:'train',      name:'鉄道会社',  emoji:'🚃', cost:100, upgTo:null,isUpg:true},
-  {id:'shrine',     name:'神社',      emoji:'⛩️', cost:50,  upgTo:null},
-]
-function COMPANY_DEF(id){ return COMPANY_LIST.find(c=>c.id===id)||null }
+function renderActions(){
+  const cp = G.players[G.currentPlayer]
+  const maxAct = cp.extraAction ? 2 : 1
+  const canAct = cp.actionUsed < maxAct && !cp.isAI
+  const el = document.getElementById('action-buttons')
 
-function renderActionCards(){
-  if(!G)return
-  const cp=G.players[G.currentPlayer]
-  const isHuman=!cp.isAI
-  const canAct=isHuman && cp.actionsLeft>0 && !processingAction
+  el.innerHTML = \`
+    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'doWork()':''}">
+      <div class="text-2xl mb-1">💼</div>
+      <div class="font-bold">はたらく</div>
+      <div class="text-xs opacity-70">\${G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円'}</div>
+    </div>
+    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'showATMPanel()':''}">
+      <div class="text-2xl mb-1">🏧</div>
+      <div class="font-bold">ATM</div>
+      <div class="text-xs opacity-70">ちょきん・おろす</div>
+    </div>
+    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'switchTab(\\\"market\\\")':''}">
+      <div class="text-2xl mb-1">🏢</div>
+      <div class="font-bold">会社を買う</div>
+      <div class="text-xs opacity-70">マーケットへ</div>
+    </div>
+    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'switchTab(\\\"market\\\")':''}">
+      <div class="text-2xl mb-1">📈</div>
+      <div class="font-bold">株を買う</div>
+      <div class="text-xs opacity-70">マーケットへ</div>
+    </div>
+  \`
 
-  // イベントカードエリア
-  const eventArea=document.getElementById('eventArea')
-  if(G.phase==='event' && G.turnIndex===0 && !G.gameOver && isHuman){
-    eventArea.style.display=''
-  } else {
-    eventArea.style.display='none'
+  // 金融機関オーナーは融資ボタン
+  if(cp.companies.includes('bank') && !cp.isAI){
+    el.innerHTML += \`
+    <div class="action-item" onclick="showLendPanel()">
+      <div class="text-2xl mb-1">🏦</div>
+      <div class="font-bold">融資する</div>
+      <div class="text-xs opacity-70">他プレイヤーへ貸付</div>
+    </div>\`
   }
 
-  // 倒産エリア
-  const bankruptArea=document.getElementById('bankruptArea')
-  if(G.bankruptPending && isHuman && cp.companies.length>0){
-    bankruptArea.style.display=''
-    document.getElementById('bankruptSellList').innerHTML=cp.companies.map(cid=>{
-      const def=COMPANY_DEF(cid); if(!def)return''
-      return \`<button class="btn btn-red w-full btn-sm" onclick="sellCompany('\${cid}')">\${def.emoji}\${def.name}を売却（\${Math.floor(def.cost/2)}円）</button>\`
-    }).join('')
-  } else bankruptArea.style.display='none'
+  // 借金があれば返済ボタン
+  if(cp.debts && cp.debts.length > 0 && !cp.isAI){
+    el.innerHTML += \`
+    <div class="action-item" onclick="showRepayPanel()">
+      <div class="text-2xl mb-1">💳</div>
+      <div class="font-bold">返済する</div>
+      <div class="text-xs opacity-70">借金: \${fmt(cp.debts.reduce((s,d)=>s+d.amount,0))}</div>
+    </div>\`
+  }
 
-  // ターン終了ボタン
-  document.getElementById('btnEndTurn').disabled=!isHuman||processingAction
+  // AI turn: auto button
+  if(cp.isAI){
+    el.innerHTML = \`
+    <div class="col-span-2 text-center py-4">
+      <div class="text-3xl mb-2">🤖</div>
+      <div class="font-bold">\${cp.name}のターン（AI）</div>
+    </div>\`
+  }
 
-  // ── アクションカードを生成 ──
-  const mult=G.eventEffects.stockUp?2:(G.eventEffects.stockDown?.5:1)
-  const japPrice=Math.ceil(10*mult)
-  const forPrice=Math.ceil(20*mult)
-  const workEarn=G.eventEffects.workBonus?15:5
-  const atmInterest=calcInterestJS(cp.atm)*(G.eventEffects.interestUp?2:1)
+  document.getElementById('endTurnBtn').disabled = cp.isAI
+  document.getElementById('atm-panel').classList.add('hidden')
+  document.getElementById('dice-panel').classList.add('hidden')
+  document.getElementById('lend-panel').classList.add('hidden')
+  document.getElementById('repay-panel').classList.add('hidden')
+}
 
-  let cards=[]
+function renderPortfolio(){
+  const cp = G.players[G.currentPlayer]
+  const el = document.getElementById('portfolio-content')
+  const stData = G.stocks
 
-  // ── 1. 会社カード（各会社ごと or 購入候補）
-  // 保有会社のサイコロアクション
-  for(const cid of cp.companies){
-    const def=COMPANY_DEF(cid); if(!def)continue
-    if(cid==='bank'){
-      // 金融機関：融資アクション
-      cards.push({
-        icon:'🏦',title:'金融機関・融資',
-        desc:'他のプレイヤーにお金を貸す。利息を毎年もらえる',
-        color:'rgba(59,130,246,.15)',borderColor:'rgba(59,130,246,.4)',
-        action:()=>openBankModal(),
-        disabled:!canAct
-      })
-    } else if(cid==='restaurant3'){
-      cards.push({
-        icon:'⭐',title:'三ツ星レストランの収益',
-        desc:'サイコロを振る: 1→-10円 / 2〜6→+40円',
-        color:'rgba(255,165,0,.15)',borderColor:'rgba(255,165,0,.4)',
-        action:()=>doCompanyRoll('restaurant3'),
-        disabled:!canAct
-      })
-    } else {
-      const descs={
-        restaurant:'1-2→-10 / 3-4→+10 / 5-6→+30円',
-        bus:'1-4→なし / 5-6→追加行動+1',
-        train:'1-4→なし / 5-6→もう一度ターン',
-        shrine:'1-2→選んだ人から50円 / 3-4→25円',
+  let html = \`<div class="space-y-3">\`
+
+  // Cash & ATM
+  html += \`
+  <div class="card-white p-3 flex justify-between items-center">
+    <div><div class="text-xs text-gray-500">💵 手持ち現金</div>
+    <div class="text-xl font-black" style="color:var(--c1);">\${fmt(cp.cash)}</div></div>
+    <div class="text-3xl">💵</div>
+  </div>
+  <div class="card-white p-3 flex justify-between items-center">
+    <div><div class="text-xs text-gray-500">🏧 ATM残高</div>
+    <div class="text-xl font-black" style="color:#00bcd4;">\${fmt(cp.atm)}</div>
+    <div class="text-xs text-gray-400">利息: \${fmt(calcInterestDisplay(cp.atm))}/年</div></div>
+    <div class="text-3xl">🏧</div>
+  </div>\`
+
+  // Stocks
+  if(cp.stocks.length > 0){
+    html += \`<div class="card-white p-3"><div class="font-bold mb-2">📈 保有株</div>\`
+    cp.stocks.forEach(s=>{
+      const st = stData.find(x=>x.id===s.id)
+      if(!st) return
+      html += \`
+      <div class="flex justify-between items-center py-1 border-b border-gray-100">
+        <div>\${st.emoji} \${st.name} × \${s.qty}株</div>
+        <div class="font-bold">\${fmt(st.buyPrice*s.qty)}</div>
+      </div>\`
+    })
+    html += \`</div>\`
+  }
+
+  // Companies
+  if(cp.companies.length > 0){
+    html += \`<div class="card-white p-3"><div class="font-bold mb-2">🏢 保有会社</div>\`
+    cp.companies.forEach(cid=>{
+      const comp = G.companies.find(x=>x.id===cid)
+      if(!comp) return
+      html += \`
+      <div class="flex justify-between items-center py-1 border-b border-gray-100">
+        <div>\${comp.emoji} \${comp.name}</div>
+        <button class="btn btn-danger btn-sm" onclick="doSellCompany('\${cid}')">売却</button>
+      </div>\`
+      // Show upgrade button
+      if(comp.upgradeTo){
+        html += \`
+        <div class="flex justify-between items-center py-1">
+          <div class="text-xs text-gray-500">⬆️ アップグレード可能(\${fmt(comp.upgradeCost)})</div>
+          <button class="btn btn-warning btn-sm" onclick="doUpgradeCompany('\${cid}')">UP!</button>
+        </div>\`
       }
-      // アップグレードが可能か確認
-      const hasUpg=def.upgTo && cp.cash>=(def.upgCost||100)
-      cards.push({
-        icon:def.emoji,title:\`\${def.name}の収益\`,
-        desc:\`サイコロを振る: \${descs[cid]||''}\${hasUpg?' [アップグレード可]':''}\`,
-        color:'rgba(255,165,0,.15)',borderColor:'rgba(255,165,0,.4)',
-        action:()=>openCompanyRollModal(cid),
-        disabled:!canAct
-      })
-    }
-  }
-
-  // 未所有の会社購入
-  const unowned=COMPANY_LIST.filter(d=>!d.isUpg&&!cp.companies.includes(d.id))
-  if(unowned.length>0){
-    const cheapest=unowned[0]
-    const affordCount=unowned.filter(d=>cp.cash>=d.cost).length
-    cards.push({
-      icon:'🏢',title:'会社を買う',
-      desc:\`購入可: \${affordCount}/\${unowned.length}種 (\${unowned.map(d=>d.emoji+d.cost+'円').join(' ')})\`,
-      color:'rgba(34,197,94,.1)',borderColor:'rgba(34,197,94,.3)',
-      action:()=>openBuyCompanyModal(),
-      disabled:!canAct
     })
+    html += \`</div>\`
   }
 
-  // ── 2. 株カード
-  cards.push({
-    icon:'📈',title:'株を買う',
-    desc:\`🗾日本株\${japPrice}円(偶数→+30/奇数→-20) 🌍外国株\${forPrice}円(偶数→+50/奇数→-30)\`,
-    color:'rgba(168,85,247,.1)',borderColor:'rgba(168,85,247,.3)',
-    action:()=>openStockModal(),
-    disabled:!canAct
-  })
-
-  // ── 3. 働くカード
-  cards.push({
-    icon:'💼',title:'働く',
-    desc:\`+\${workEarn}円もらえる\${G.eventEffects.workBonus?' (就労支援3倍！)':''}\`,
-    color:'rgba(34,197,94,.1)',borderColor:'rgba(34,197,94,.3)',
-    action:()=>doWork(),
-    disabled:!canAct
-  })
-
-  // ── 4. ATMカード
-  cards.push({
-    icon:'🏧',title:'ATMに預ける',
-    desc:\`現金からATMへ。今の利息: 毎ターン+\${atmInterest}円\`,
-    color:'rgba(59,130,246,.1)',borderColor:'rgba(59,130,246,.3)',
-    action:()=>openAtmModal(),
-    disabled:!canAct
-  })
-
-  // ── 5. 借金返済（借金があれば）
-  if(cp.debt>0){
-    cards.push({
-      icon:'💳',title:'借金を返済する',
-      desc:\`残債 \${cp.debt}円 / 毎ターン\${cp.debtPerTurn}円返済\`,
-      color:'rgba(239,68,68,.1)',borderColor:'rgba(239,68,68,.3)',
-      action:()=>openRepayModal(),
-      disabled:!canAct
+  // Loans given
+  if(cp.loans && cp.loans.length > 0){
+    html += \`<div class="card-white p-3"><div class="font-bold mb-2">🏦 融資中</div>\`
+    cp.loans.forEach(l=>{
+      html += \`<div class="flex justify-between py-1 border-b border-gray-100">
+        <div>\${G.players[l.toPlayerId].name}へ \${fmt(l.amount)}</div>
+        <div class="text-xs text-gray-500">年利\${fmt(l.yearlyInterest)}</div>
+      </div>\`
     })
+    html += \`</div>\`
   }
 
-  // ── HTMLレンダリング
-  document.getElementById('actionCards').innerHTML=cards.map((c,i)=>\`
-    <div class="action-card \${c.disabled?'disabled':''}" onclick="\${c.disabled?'':'('+c.action.toString()+')()'}" style="border-color:\${c.borderColor};background:\${c.color}">
-      <div class="text-2xl mb-1">\${c.icon}</div>
-      <div class="text-sm font-black text-white mb-1">\${c.title}</div>
-      <div class="text-xs text-gray-400 font-semibold leading-snug">\${c.desc}</div>
-    </div>
-  \`).join('')
+  // Debts
+  if(cp.debts && cp.debts.length > 0){
+    html += \`<div class="card-white p-3" style="border:2px solid #f44336;"><div class="font-bold mb-2 text-red-600">⚠️ 借金</div>\`
+    cp.debts.forEach(d=>{
+      html += \`<div class="flex justify-between py-1 border-b border-gray-100">
+        <div>\${G.players[d.fromPlayerId].name}から \${fmt(d.amount)}</div>
+        <div class="text-xs text-gray-500">年利\${fmt(d.yearlyInterest)}</div>
+      </div>\`
+    })
+    html += \`</div>\`
+  }
 
-  // onclick を正しくバインドし直す
-  const cardEls=document.querySelectorAll('#actionCards .action-card:not(.disabled)')
-  cardEls.forEach((el,i)=>{
-    const idx=parseInt(el.getAttribute('data-idx')||i)
-    el.onclick=null
-  })
-  // data-idx付きで再生成
-  document.getElementById('actionCards').innerHTML=cards.map((c,idx)=>\`
-    <div class="action-card \${c.disabled?'disabled':''}" id="ac\${idx}" style="border-color:\${c.borderColor};background:\${c.color}">
-      <div class="text-2xl mb-1">\${c.icon}</div>
-      <div class="text-sm font-black text-white mb-1">\${c.title}</div>
-      <div class="text-xs text-gray-400 font-semibold leading-snug">\${c.desc}</div>
-    </div>
-  \`).join('')
-  cards.forEach((c,idx)=>{
-    const el=document.getElementById('ac'+idx)
-    if(el&&!c.disabled) el.addEventListener('click',c.action)
-  })
+  html += \`<div class="card-white p-3 flex justify-between items-center">
+    <div class="font-bold">💰 勝利資産合計</div>
+    <div class="text-xl font-black" style="color:var(--c3);">\${fmt(cp.totalAssets)}</div>
+  </div>\`
+  html += \`</div>\`
+  el.innerHTML = html
 }
 
-// ============================================================
-// ランキング
-// ============================================================
-function renderRanking(){
-  const sorted=[...G.players].sort((a,b)=>b.totalAssets-a.totalAssets)
-  const medals=['🥇','🥈','🥉','4️⃣']
-  const clrs=['linear-gradient(135deg,#FFD700,#FFA000)','linear-gradient(135deg,#B0BEC5,#78909C)','linear-gradient(135deg,#CD7F32,#8D4004)','rgba(255,255,255,.05)']
-  document.getElementById('rankingContent').innerHTML=sorted.map((p,i)=>\`
-    <div class="flex items-center gap-3 rounded-xl p-3 mb-2" style="background:\${clrs[i]||clrs[3]}">
-      <span class="text-2xl">\${medals[i]||'📌'}</span>
-      <div class="flex-1 min-w-0">
-        <div class="font-black text-sm \${i<3?'text-white':'text-gray-200'} truncate">\${p.isAI?'🤖':'👤'} \${esc(p.name)}</div>
-        <div class="text-xs \${i<3?'text-white opacity-80':'text-gray-400'} font-semibold">現金\${p.cash} ATM\${p.atm} 株\${calcStockVal(p)}</div>
-      </div>
-      <div class="font-black text-sm \${i<3?'text-white':'text-gray-200'}">\${p.totalAssets}円</div>
-    </div>
-  \`).join('')
-}
-
-function renderAll(){
-  document.getElementById('allContent').innerHTML=G.players.map(p=>\`
-    <div class="rounded-xl p-3 mb-2" style="background:rgba(255,255,255,.06)">
-      <div class="flex justify-between items-center mb-1">
-        <span class="font-black text-sm text-white">\${p.isAI?'🤖':'👤'} \${esc(p.name)}</span>
-        <span class="font-black text-sm text-yellow-300">総資産 \${p.totalAssets}円</span>
-      </div>
-      <div class="grid grid-cols-3 gap-2 text-xs text-gray-300 font-semibold">
-        <div>💵 現金: \${p.cash}円</div>
-        <div>🏧 ATM: \${p.atm}円</div>
-        <div>📈 株: \${calcStockVal(p)}円相当</div>
-      </div>
-      \${p.companies.length>0?'<div class="mt-1 text-xs text-orange-300 font-bold">🏢 '+p.companies.map(id=>{const d=COMPANY_DEF(id);return d?d.emoji+d.name:''}).join(' / ')+'</div>':''}
-      \${p.debt>0?'<div class="text-xs text-red-400 font-bold mt-0.5">💳 借金: '+p.debt+'円</div>':''}
-    </div>
-  \`).join('')
-}
-
-function calcStockVal(p){ return p.stocks.japan*10+p.stocks.foreign*20 }
-
-// ============================================================
-// ログ
-// ============================================================
-function renderLog(){
-  document.getElementById('gameLog').innerHTML=(G.log||[]).slice(0,15).map(l=>\`<div class="log-item">\${esc(l)}</div>\`).join('')
-}
-
-// ============================================================
-// タブ切替
-// ============================================================
-function switchTab(tab){
-  ['action','ranking','all'].forEach(t=>{
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab)
-    document.getElementById('content-'+t).style.display=t===tab?'block':'none'
-  })
-  if(tab==='ranking') renderRanking()
-  if(tab==='all') renderAll()
-}
-
-// ============================================================
-// ATM利息計算（JS側）
-// ============================================================
-function calcInterestJS(atm){
-  if(atm>=75)return 30
-  if(atm>=55)return 15
-  if(atm>=35)return 10
-  if(atm>=15)return 5
+function calcInterestDisplay(atm){
+  if(atm>=3500) return 600
+  if(atm>=2600) return 300
+  if(atm>=1500) return 200
+  if(atm>=200)  return 100
   return 0
 }
 
-// ============================================================
-// モーダル：会社購入
-// ============================================================
-function openBuyCompanyModal(){
-  if(processingAction)return
-  const cp=G.players[G.currentPlayer]
-  const unowned=COMPANY_LIST.filter(d=>!d.isUpg&&!cp.companies.includes(d.id))
-  // アップグレード候補
-  const upgrades=[]
-  for(const cid of cp.companies){
-    const def=COMPANY_DEF(cid)
-    if(def&&def.upgTo){
-      const upgDef=COMPANY_DEF(def.upgTo)
-      if(upgDef) upgrades.push({from:def,to:upgDef})
-    }
-  }
+function renderMarket(){
+  const cp = G.players[G.currentPlayer]
+  const canAct = cp.actionUsed < (cp.extraAction?2:1) && !cp.isAI
+  const el = document.getElementById('market-content')
 
-  let html=\`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black">🏢 会社を買う</h3><button onclick="closeActionModal()" class="text-gray-400 text-xl">✕</button></div>\`
+  let html = \`<h3 class="font-bold mb-2">🏢 会社マーケット</h3>
+  <div class="grid grid-cols-2 gap-2 mb-4">\`
 
-  if(upgrades.length>0){
-    html+=\`<div class="mb-3"><div class="text-xs font-black text-yellow-300 mb-2">⬆️ アップグレード</div><div class="space-y-2">\`
-    for(const u of upgrades){
-      const canBuy=cp.cash>=(u.to.cost)
-      html+=\`<div class="rounded-xl p-3" style="background:rgba(255,165,0,.15);border:1px solid rgba(255,165,0,.4)">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-black text-white">\${u.from.emoji}\${u.from.name} → \${u.to.emoji}\${u.to.name}</span>
-          <span class="font-black text-yellow-300">\${u.to.cost}円</span>
-        </div>
-        <button class="btn btn-yellow w-full btn-sm mt-2" onclick="closeActionModal();buyCompany('\${u.to.id}')" \${canBuy?'':'disabled'}>⬆️ アップグレード（\${u.to.cost}円）</button>
-      </div>\`
-    }
-    html+=\`</div></div>\`
-  }
-
-  html+=\`<div class="text-xs font-black text-green-300 mb-2">🏢 新規購入</div><div class="space-y-2">\`
-  for(const def of unowned){
-    const canBuy=cp.cash>=def.cost
-    const descs={
-      restaurant:'1-2→-10 / 3-4→+10 / 5-6→+30円',
-      bank:'他プレイヤーに融資できる',
-      bus:'5-6→追加行動1回',
-      shrine:'1-2→50円 / 3-4→25円もらう',
-    }
-    html+=\`<div class="rounded-xl p-3" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15)">
-      <div class="flex justify-between items-center mb-1">
-        <span class="font-black text-white text-sm">\${def.emoji} \${def.name}</span>
-        <span class="font-black text-yellow-300">\${def.cost}円</span>
-      </div>
-      <div class="text-xs text-gray-400 mb-2">\${descs[def.id]||''}</div>
-      <button class="btn btn-green w-full btn-sm" onclick="closeActionModal();buyCompany('\${def.id}')" \${canBuy?'':'disabled'}>購入（\${def.cost}円）</button>
+  G.companies.filter(c=>!['restaurant3','railway'].includes(c.id)).forEach(comp=>{
+    const owned = cp.companies.includes(comp.id)
+    const canBuy = canAct && !owned && cp.cash >= comp.cost
+    html += \`
+    <div class="item-card \${owned?'owned':canBuy?'':'disabled'}" onclick="\${canBuy?'doBuyCompany(\\\"'+comp.id+'\\\")':owned?'showToast(\\\"すでに持っています\\\",\\\"error\\\")':''}">
+      <div class="text-2xl mb-1">\${comp.emoji}</div>
+      <div class="font-bold text-sm">\${comp.name}</div>
+      <div class="text-xs opacity-70 mb-1">\${comp.desc}</div>
+      <div class="font-black" style="color:var(--c3);">\${fmt(comp.cost)}</div>
+      \${owned?'<div class="text-xs text-green-400 font-bold">✅ 所持済み</div>':''}
     </div>\`
-  }
-  html+=\`</div>\`
+  })
+  html += \`</div>\`
 
-  document.getElementById('actionModalContent').innerHTML=html
-  document.getElementById('actionModal').style.display='flex'
-}
-
-// ============================================================
-// モーダル：会社収益（サイコロ）
-// ============================================================
-function openCompanyRollModal(cid){
-  if(processingAction)return
-  const def=COMPANY_DEF(cid); if(!def)return
-  const cp=G.players[G.currentPlayer]
-  const canBuy=def.upgTo && cp.cash>=(def.upgCost||100)
-  const descs={
-    restaurant:'1-2: -10円 / 3-4: +10円 / 5-6: +30円',
-    bus:'1-4: なし（行動消費） / 5-6: +追加行動1回',
-    train:'1-4: なし（行動消費） / 5-6: もう一度ターンが回ってくる',
-    shrine:'1-2: 選んだ人から50円もらう / 3-4: 選んだ人から25円もらう / 5-6: なし',
-  }
-  let html=\`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black">\${def.emoji} \${def.name}の収益</h3><button onclick="closeActionModal()" class="text-gray-400 text-xl">✕</button></div>\`
-  html+=\`<div class="rounded-xl p-4 text-center mb-4" style="background:rgba(255,165,0,.15)">
-    <div style="font-size:3rem" class="mb-2">\${def.emoji}</div>
-    <div class="text-xs text-gray-300 font-semibold mb-3">\${descs[cid]||''}</div>
-    \${G.eventEffects.inflation?'<div class="text-xs text-green-400 font-black">📈 インフレ中: 利益2倍！</div>':''}
-    \${G.eventEffects.deflation?'<div class="text-xs text-red-400 font-black">📉 デフレ中: 損失2倍！</div>':''}
-    \${G.eventEffects.forceEven?'<div class="text-xs text-purple-300 font-black">🎲 偶数確定！</div>':''}
-    \${G.eventEffects.forceOdd?'<div class="text-xs text-pink-300 font-black">🎲 奇数確定！</div>':''}
-  </div>\`
-  if(canBuy){
-    html+=\`<button class="btn btn-blue w-full btn-sm mb-2" onclick="closeActionModal();buyCompany('\${def.upgTo}')">⬆️ アップグレード（\${def.upgCost}円）</button>\`
-  }
-  html+=\`<button class="btn btn-yellow w-full py-3" onclick="closeActionModal();doCompanyRoll('\${cid}')">🎲 サイコロを振る！</button>\`
-  document.getElementById('actionModalContent').innerHTML=html
-  document.getElementById('actionModal').style.display='flex'
-}
-
-// ============================================================
-// モーダル：株
-// ============================================================
-function openStockModal(){
-  if(processingAction)return
-  const cp=G.players[G.currentPlayer]
-  const mult=G.eventEffects.stockUp?2:(G.eventEffects.stockDown?.5:1)
-  const japPrice=Math.ceil(10*mult)
-  const forPrice=Math.ceil(20*mult)
-
-  let html=\`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black">📈 株を買う</h3><button onclick="closeActionModal()" class="text-gray-400 text-xl">✕</button></div>
-  <div class="text-xs text-gray-400 mb-3 font-semibold">※ 購入すると同時にサイコロを振って配当を受け取ります</div>\`
-
-  const stocks=[
-    {id:'japan',emoji:'🗾',name:'日本株',price:japPrice,held:cp.stocks.japan,desc:'偶数→+30円 / 奇数→-20円'},
-    {id:'foreign',emoji:'🌍',name:'外国株',price:forPrice,held:cp.stocks.foreign,desc:'偶数→+50円 / 奇数→-30円'},
-  ]
-  for(const s of stocks){
-    const canBuy=cp.cash>=s.price
-    html+=\`<div class="rounded-xl p-4 mb-3" style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3)">
-      <div class="flex justify-between items-center mb-1">
-        <span class="text-lg font-black text-white">\${s.emoji} \${s.name}</span>
-        <span class="font-black text-yellow-300">\${s.price}円/株</span>
-      </div>
-      <div class="text-xs text-gray-400 mb-1">\${s.desc}</div>
-      <div class="text-xs text-blue-300 mb-3">保有: \${s.held}株</div>
-      \${G.eventEffects.stockUp?'<div class="text-xs text-yellow-400 font-black mb-2">🚀 株価高騰中: 価格・配当2倍！</div>':''}
-      \${G.eventEffects.stockDown?'<div class="text-xs text-red-400 font-black mb-2">💥 株価暴落中: 価格・配当半分！</div>':''}
-      <button class="btn btn-primary w-full btn-sm" onclick="closeActionModal();doBuyStock('\${s.id}')" \${canBuy?'':'disabled'}>📈 \${s.name}を買う（\${s.price}円）</button>
+  html += \`<h3 class="font-bold mb-2">📈 株マーケット</h3>
+  <div class="grid grid-cols-2 gap-2">\`
+  G.stocks.forEach(st=>{
+    const holding = cp.stocks.find(s=>s.id===st.id)
+    const qty = holding?.qty||0
+    let price = st.buyPrice
+    if(G.activeEventTypes.includes('stock_x2')) price*=2
+    if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
+    const canBuy = canAct && cp.cash >= price
+    html += \`
+    <div class="item-card \${canBuy?'':'disabled'}" onclick="\${canBuy?'doBuyStock(\\\"'+st.id+'\\\")':''}">
+      <div class="text-2xl mb-1">\${st.emoji}</div>
+      <div class="font-bold text-sm">\${st.name}</div>
+      <div class="text-xs opacity-70 mb-1">\${st.desc}</div>
+      <div class="font-black" style="color:var(--c3);">\${fmt(price)}/株</div>
+      \${qty>0?'<div class="text-xs text-blue-300 font-bold">📊 '+qty+'株保有</div>':''}
     </div>\`
+  })
+  html += \`</div>\`
+
+  // サイコロアクション（保有済み会社・株のロール）
+  let hasRollable = false
+  html += \`<h3 class="font-bold mt-4 mb-2">🎲 サイコロアクション</h3><div class="space-y-2">\`
+  cp.companies.forEach(cid=>{
+    const comp = G.companies.find(x=>x.id===cid)
+    if(!comp || comp.rolls.length===0 || comp.id==='bank') return
+    hasRollable = true
+    html += \`
+    <div class="item-card owned \${canAct?'':'disabled'}" onclick="\${canAct?'startCompanyRoll(\\\"'+cid+'\\\")':''}">
+      \${comp.emoji} <span class="font-bold">\${comp.name}</span> のサイコロ
+      <div class="text-xs opacity-70">\${comp.rolls.map(r=>r.range[0]+'-'+r.range[1]+': '+r.label).join(' / ')}</div>
+    </div>\`
+  })
+  cp.stocks.forEach(s=>{
+    if(s.qty===0) return
+    const st = G.stocks.find(x=>x.id===s.id)
+    if(!st) return
+    hasRollable = true
+    html += \`
+    <div class="item-card owned \${canAct?'':'disabled'}" onclick="\${canAct?'startStockRoll(\\\"'+s.id+'\\\")':''}">
+      \${st.emoji} <span class="font-bold">\${st.name}</span> の配当 (\${s.qty}株)
+      <div class="text-xs opacity-70">偶数: +\${yen(st.rolls[0].effect*s.qty)}円 / 奇数: \${yen(st.rolls[1].effect*s.qty)}円</div>
+    </div>\`
+  })
+  if(!hasRollable){
+    html += \`<div class="text-sm opacity-50">会社・株を購入するとサイコロを振れます</div>\`
   }
-  document.getElementById('actionModalContent').innerHTML=html
-  document.getElementById('actionModal').style.display='flex'
+  html += \`</div>\`
+
+  el.innerHTML = html
 }
 
-// ============================================================
-// モーダル：ATM
-// ============================================================
-function openAtmModal(){
-  if(processingAction)return
-  const cp=G.players[G.currentPlayer]
-  const interest=calcInterestJS(cp.atm)*(G.eventEffects.interestUp?2:1)
-
-  const html=\`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black">🏧 ATM</h3><button onclick="closeActionModal()" class="text-gray-400 text-xl">✕</button></div>
-  <div class="rounded-xl p-3 mb-3" style="background:rgba(59,130,246,.1)">
-    <div class="grid grid-cols-2 gap-3 text-center">
-      <div><div class="text-xs text-gray-400">現在の現金</div><div class="text-xl font-black text-green-400">\${cp.cash}円</div></div>
-      <div><div class="text-xs text-gray-400">ATM残高</div><div class="text-xl font-black text-blue-400">\${cp.atm}円</div></div>
+function renderRanking(){
+  const el = document.getElementById('ranking-content')
+  const sorted = [...G.players].sort((a,b)=>b.totalAssets-a.totalAssets)
+  el.innerHTML = sorted.map((p,i)=>\`
+    <div class="rank-row rank-\${i<3?i+1:'other'} \${p.id===G.currentPlayer?'ring-2 ring-yellow-300':''}">
+      <div class="text-2xl font-black">\${['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'][i]||i+1+'.'}</div>
+      <div class="flex-1">
+        <div class="font-bold">\${PLAYER_EMOJIS[p.id]} \${p.name}</div>
+        <div class="text-sm">手持:\${fmt(p.cash)} ATM:\${fmt(p.atm)}</div>
+      </div>
+      <div class="text-right">
+        <div class="font-black text-lg">\${fmt(p.totalAssets)}</div>
+      </div>
     </div>
-    <div class="text-center mt-2 text-xs text-teal-300 font-black">現在の利息: 毎ターン+\${interest}円</div>
-    \${G.eventEffects.interestUp?'<div class="text-center text-xs text-yellow-400 font-black">💰 利息UP中: 2倍！</div>':''}
-  </div>
-  <div class="mb-3">
-    <div class="text-xs font-black text-white mb-2">コイン単位で選ぶ</div>
-    <div class="flex gap-2 flex-wrap" id="coinBtns">
-      \${[5,10,50].map(v=>\`<button class="rounded-full px-3 py-1 text-xs font-black border-2" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:white" onclick="setAtmAmount(\${v})">\${v}円コイン</button>\`).join('')}
-    </div>
-    <input type="number" id="atmAmountIn" class="game-input mt-2" placeholder="金額を入力" min="1">
-  </div>
-  <div class="flex gap-2">
-    <button class="btn btn-blue flex-1 py-2" onclick="doDepositFromModal()">🏧 預ける</button>
-    <button class="btn btn-yellow flex-1 py-2" onclick="doWithdrawFromModal()">💸 引き出す</button>
-  </div>\`
-
-  document.getElementById('actionModalContent').innerHTML=html
-  document.getElementById('actionModal').style.display='flex'
+  \`).join('')
 }
 
-function setAtmAmount(v){
-  const inp=document.getElementById('atmAmountIn')
-  if(inp) inp.value=(parseInt(inp.value)||0)+v
-}
-
-async function doDepositFromModal(){
-  const amount=parseInt(document.getElementById('atmAmountIn').value)||0
-  if(amount<=0){showToast('❌ 金額を入力してください','error');return}
-  closeActionModal()
-  await callAction({type:'deposit',amount})
-}
-async function doWithdrawFromModal(){
-  const amount=parseInt(document.getElementById('atmAmountIn').value)||0
-  if(amount<=0){showToast('❌ 金額を入力してください','error');return}
-  closeActionModal()
-  await callAction({type:'withdraw',amount})
+function renderLog(){
+  const el = document.getElementById('log-content')
+  el.innerHTML = G.log.map(l=>\`<div class="text-xs p-1 rounded bg-white/5">\${l}</div>\`).join('')
 }
 
 // ============================================================
-// モーダル：金融機関（融資）
+// Actions
 // ============================================================
-function openBankModal(){
-  if(processingAction)return
-  const cp=G.players[G.currentPlayer]
-  const others=G.players.filter((_,i)=>i!==G.currentPlayer)
-
-  const html=\`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black">🏦 融資する</h3><button onclick="closeActionModal()" class="text-gray-400 text-xl">✕</button></div>
-  <div class="text-xs text-gray-400 mb-3 font-semibold">融資額に応じて毎年利息をもらえます<br>〜50円: 年10円利息 / 51円以上: 年20円利息</div>
-  <div class="mb-3">
-    <label class="text-xs font-black text-white block mb-1">融資する相手</label>
-    <select id="loanTargetSel" class="game-input">
-      \${others.map(p=>\`<option value="\${p.id}">\${esc(p.name)}（現金\${p.cash}円）</option>\`).join('')}
-    </select>
-  </div>
-  <div class="mb-4">
-    <label class="text-xs font-black text-white block mb-1">融資額</label>
-    <div class="flex gap-2 flex-wrap mb-2">
-      \${[10,20,50].map(v=>\`<button class="rounded-full px-3 py-1 text-xs font-black border-2" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:white" onclick="addLoanAmount(\${v})">\${v}円</button>\`).join('')}
-    </div>
-    <input type="number" id="loanAmountIn" class="game-input" placeholder="融資額" min="1">
-  </div>
-  <button class="btn btn-blue w-full py-2" onclick="doLoanFromModal()">🏦 融資する</button>\`
-
-  document.getElementById('actionModalContent').innerHTML=html
-  document.getElementById('actionModal').style.display='flex'
-}
-function addLoanAmount(v){
-  const inp=document.getElementById('loanAmountIn')
-  if(inp) inp.value=(parseInt(inp.value)||0)+v
-}
-async function doLoanFromModal(){
-  const toPlayer=parseInt(document.getElementById('loanTargetSel').value)
-  const amount=parseInt(document.getElementById('loanAmountIn').value)||0
-  if(amount<=0){showToast('❌ 金額を入力してください','error');return}
-  closeActionModal()
-  await callAction({type:'loan',toPlayer,amount},false)
-}
-
-// ============================================================
-// モーダル：借金返済
-// ============================================================
-function openRepayModal(){
-  if(processingAction)return
-  const cp=G.players[G.currentPlayer]
-  const html=\`<div class="flex justify-between items-center mb-4"><h3 class="text-lg font-black">💳 借金返済</h3><button onclick="closeActionModal()" class="text-gray-400 text-xl">✕</button></div>
-  <div class="text-sm text-red-400 font-black mb-3">残債: \${cp.debt}円 / 毎ターン\${cp.debtPerTurn}円の利息</div>
-  <div class="mb-4">
-    <div class="flex gap-2 flex-wrap mb-2">
-      \${[5,10,20].map(v=>\`<button class="rounded-full px-3 py-1 text-xs font-black border-2" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:white" onclick="addRepayAmt(\${v})">\${v}円</button>\`).join('')}
-    </div>
-    <input type="number" id="repayAmtIn" class="game-input" placeholder="返済額" min="1">
-  </div>
-  <button class="btn btn-red w-full py-2" onclick="doRepayFromModal()">💳 返済する</button>\`
-
-  document.getElementById('actionModalContent').innerHTML=html
-  document.getElementById('actionModal').style.display='flex'
-}
-function addRepayAmt(v){
-  const inp=document.getElementById('repayAmtIn')
-  if(inp) inp.value=(parseInt(inp.value)||0)+v
-}
-async function doRepayFromModal(){
-  const amount=parseInt(document.getElementById('repayAmtIn').value)||0
-  if(amount<=0){showToast('❌ 金額を入力してください','error');return}
-  closeActionModal()
-  await callAction({type:'repay',amount},false)
-}
-
-function closeActionModal(){
-  document.getElementById('actionModal').style.display='none'
-  document.getElementById('actionModalContent').innerHTML=''
-}
-
-// ============================================================
-// アクション実行
-// ============================================================
-async function buyCompany(cid){
-  if(processingAction)return
-  const def=COMPANY_DEF(cid); if(!def)return
-  showConfirm(\`\${def.emoji}\${def.name}を購入しますか？\`,
-    \`<div class="text-center"><div style="font-size:3rem">\${def.emoji}</div>
-     <div class="text-xl font-black text-yellow-300 my-2">\${def.cost}円</div>
-     <div class="text-sm">\${getCompanyDesc(cid)}</div></div>\`,
-    ()=>callAction({type:'buy_company',companyId:cid}),'🏢 購入する！')
-}
-
-async function doCompanyRoll(cid){
-  if(processingAction)return
-  setMsg('⌛ サイコロを振っています...')
-  processingAction=true
+async function apiPost(endpoint, body){
+  if(processingAction) return null
+  processingAction = true
   try{
-    const rollRes=await fetch('/api/game/roll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G})})
-    const rollData=await rollRes.json()
-    if(rollData.success){ G=rollData.state; showDice(G.lastDice) }
-
-    const res=await fetch('/api/game/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G,action:{type:'company_roll',companyId:cid}})})
-    const d=await res.json()
-    if(d.success){
-      G=d.state
-      if(d.needShrineTarget){
-        pendingShrineAmount=d.shrineAmount||0
-        renderGame()
-        showShrineModal(pendingShrineAmount)
-        return
-      }
-      renderGame(); spawnCoins(2)
-    } else showToast('❌ '+(d.error||'エラー'),'error')
-  }catch(e){showToast('❌ 通信エラー','error')}
-  finally{processingAction=false;setMsg('')}
-}
-
-async function sellCompany(cid){
-  const def=COMPANY_DEF(cid); if(!def)return
-  await callAction({type:'sell_company',companyId:cid})
-}
-
-async function doBuyStock(stockId){
-  if(processingAction)return
-  const mult=G.eventEffects.stockUp?2:(G.eventEffects.stockDown?.5:1)
-  const price=Math.ceil((stockId==='japan'?10:20)*mult)
-  setMsg('⌛ サイコロを振っています...')
-  processingAction=true
-  try{
-    // 購入してすぐにサイコロを振る
-    const rollRes=await fetch('/api/game/roll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G})})
-    const rollData=await rollRes.json()
-    if(rollData.success){ G=rollData.state; showDice(G.lastDice) }
-
-    // 株を買う
-    const buyRes=await fetch('/api/game/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G,action:{type:'buy_stock',stockId,qty:1}})})
-    const buyData=await buyRes.json()
-    if(!buyData.success){showToast('❌ '+(buyData.error||'エラー'),'error');return}
-    G=buyData.state
-
-    // すぐに配当受け取り
-    const divRes=await fetch('/api/game/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G,action:{type:'stock_dividend',stockId}})})
-    const divData=await divRes.json()
-    if(divData.success){ G=divData.state; renderGame(); spawnCoins(2) }
-    else showToast('❌ '+(divData.error||'エラー'),'error')
-  }catch(e){showToast('❌ 通信エラー','error')}
-  finally{processingAction=false;setMsg('')}
+    const res = await fetch('/api/game'+endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    })
+    return await res.json()
+  } finally{
+    processingAction = false
+  }
 }
 
 async function doWork(){
-  if(processingAction)return
-  const earn=G.eventEffects.workBonus?15:5
-  showConfirm('💼 働きますか？',
-    \`<div class="text-center"><div style="font-size:3rem">💼</div>
-     <div class="text-xl font-black text-green-400 my-2">+\${earn}円もらえる\${G.eventEffects.workBonus?' (就労支援3倍！)':''}</div></div>\`,
-    ()=>callAction({type:'work'}),'💼 働く！')
+  const data = await apiPost('/action/work',{state:G})
+  if(!data) return
+  if(!data.success){ showToast(data.error,'error'); return }
+  G = data.state
+  renderGame()
+  spawnCoins(3)
+  showToast('💼 はたらいた！','info')
+}
+
+// ATM panel
+function showATMPanel(){
+  const cp = G.players[G.currentPlayer]
+  document.getElementById('atmBalance').textContent = fmt(cp.atm)
+  document.getElementById('atmInterestInfo').textContent = '利息: '+fmt(calcInterestDisplay(cp.atm))+'/年'
+  document.getElementById('atm-panel').classList.remove('hidden')
+}
+
+async function doDeposit(){
+  const amt = parseInt(document.getElementById('atmAmount').value)
+  if(!amt||amt<=0){ showToast('金額を入力してね','error'); return }
+  const data = await apiPost('/action/deposit',{state:G, amount:amt})
+  if(!data) return
+  if(!data.success){ showToast(data.error,'error'); return }
+  G = data.state
+  document.getElementById('atmAmount').value=''
+  document.getElementById('atm-panel').classList.add('hidden')
+  renderGame()
+  showToast('🏧 預けた！','info')
+}
+
+async function doWithdraw(){
+  const amt = parseInt(document.getElementById('atmAmount').value)
+  if(!amt||amt<=0){ showToast('金額を入力してね','error'); return }
+  const data = await apiPost('/action/withdraw',{state:G, amount:amt})
+  if(!data) return
+  if(!data.success){ showToast(data.error,'error'); return }
+  G = data.state
+  document.getElementById('atmAmount').value=''
+  document.getElementById('atm-panel').classList.add('hidden')
+  renderGame()
+  showToast('💸 引き出した！','info')
+}
+
+// Company buy
+async function doBuyCompany(companyId){
+  const comp = G.companies.find(c=>c.id===companyId)
+  showConfirm(
+    comp.emoji+' '+comp.name+'を買う？',
+    \`<div class="text-2xl font-black" style="color:#f44336;">\${fmt(comp.cost)}</div>
+    <div class="text-sm mt-1">\${comp.desc}</div>\`,
+    async ()=>{
+      const data = await apiPost('/action/buy-company',{state:G, companyId})
+      if(!data) return
+      if(!data.success){ showToast(data.error,'error'); return }
+      G = data.state
+      renderGame()
+      spawnCoins(5)
+      showToast('🏢 購入！','info')
+    }
+  )
+}
+
+// Company upgrade
+async function doUpgradeCompany(companyId){
+  const comp = G.companies.find(c=>c.id===companyId)
+  const newComp = G.companies.find(c=>c.id===comp.upgradeTo)
+  showConfirm(
+    '⬆️ アップグレード',
+    \`\${comp.emoji}\${comp.name} → \${newComp.emoji}\${newComp.name}<br>費用: <span class="font-black">\${fmt(comp.upgradeCost)}</span>\`,
+    async ()=>{
+      const data = await apiPost('/action/upgrade-company',{state:G, companyId})
+      if(!data) return
+      if(!data.success){ showToast(data.error,'error'); return }
+      G = data.state
+      renderGame()
+      spawnCoins(8)
+      showToast('⬆️ アップグレード！','info')
+    }
+  )
+}
+
+// Company sell
+async function doSellCompany(companyId){
+  const comp = G.companies.find(c=>c.id===companyId)
+  const sellPrice = Math.floor(comp.cost*0.5)
+  showConfirm(
+    comp.emoji+' '+comp.name+'を売る？',
+    \`売値: <span class="font-black">\${fmt(sellPrice)}</span>（購入額の半額）\`,
+    async ()=>{
+      const data = await apiPost('/action/sell-company',{state:G, companyId})
+      if(!data) return
+      if(!data.success){ showToast(data.error,'error'); return }
+      G = data.state
+      renderGame()
+      showToast('💸 売却！','info')
+    }
+  )
+}
+
+// Stock buy
+function doBuyStock(stockId){
+  const st = G.stocks.find(s=>s.id===stockId)
+  let price = st.buyPrice
+  if(G.activeEventTypes.includes('stock_x2')) price*=2
+  if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
+  showConfirm(
+    st.emoji+' '+st.name+'を買う？',
+    \`1株 <span class="font-black">\${fmt(price)}</span><br>\${st.desc}\`,
+    async ()=>{
+      const data = await apiPost('/action/buy-stock',{state:G, stockId, qty:1})
+      if(!data) return
+      if(!data.success){ showToast(data.error,'error'); return }
+      G = data.state
+      renderGame()
+      spawnCoins(4)
+      showToast('📈 購入！','info')
+    }
+  )
+}
+
+// Company roll
+function startCompanyRoll(companyId){
+  const comp = G.companies.find(c=>c.id===companyId)
+  diceContext = {type:'company', id:companyId}
+  document.getElementById('dicePanelTitle').textContent = comp.emoji+' '+comp.name+' のサイコロ！'
+  document.getElementById('diceDisplay').textContent = '🎲'
+  document.getElementById('diceResult').textContent = ''
+  document.getElementById('rollBtn').disabled = false
+  document.getElementById('dice-panel').classList.remove('hidden')
+  switchTab('actions')
+}
+
+// Stock roll
+function startStockRoll(stockId){
+  const st = G.stocks.find(s=>s.id===stockId)
+  diceContext = {type:'stock', id:stockId}
+  document.getElementById('dicePanelTitle').textContent = st.emoji+' '+st.name+' の配当サイコロ！'
+  document.getElementById('diceDisplay').textContent = '🎲'
+  document.getElementById('diceResult').textContent = ''
+  document.getElementById('rollBtn').disabled = false
+  document.getElementById('dice-panel').classList.remove('hidden')
+  switchTab('actions')
+}
+
+const DICE_EMOJIS = ['','⚀','⚁','⚂','⚃','⚄','⚅']
+
+async function rollDice(){
+  document.getElementById('rollBtn').disabled = true
+  const diceEl = document.getElementById('diceDisplay')
+  diceEl.classList.add('rolling')
+
+  // animate
+  let cnt = 0
+  const anim = setInterval(()=>{
+    diceEl.textContent = DICE_EMOJIS[Math.floor(Math.random()*6)+1]
+    cnt++; if(cnt>10) clearInterval(anim)
+  },80)
+
+  // fetch result
+  const diceData = await fetch('/api/game/roll-dice',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({state:G})
+  }).then(r=>r.json())
+
+  await new Promise(r=>setTimeout(r,900))
+  clearInterval(anim)
+  diceEl.classList.remove('rolling')
+
+  const dice = diceData.dice
+  diceEl.textContent = DICE_EMOJIS[dice] || dice
+
+  // Apply result
+  if(diceContext.type==='company'){
+    const data = await apiPost('/action/company-roll',{state:G, companyId:diceContext.id, dice})
+    if(!data){ document.getElementById('rollBtn').disabled=false; return }
+    if(!data.success){ showToast(data.error,'error'); document.getElementById('rollBtn').disabled=false; return }
+
+    const resultText = \`サイコロ \${dice} → \${data.label || '結果なし'}\${data.effect&&data.effect!==0?' ('+( data.effect>0?'+':'')+fmt(data.effect)+')':''}\`
+    document.getElementById('diceResult').textContent = resultText
+    G = data.state
+
+    if(data.bonus === 'take_2500' || data.bonus === 'take_1250'){
+      showShrineTargets()
+    } else {
+      if(data.effect > 0) spawnCoins(6)
+      setTimeout(()=>{
+        document.getElementById('dice-panel').classList.add('hidden')
+        renderGame()
+      },1500)
+    }
+  } else if(diceContext.type==='stock'){
+    const data = await apiPost('/action/stock-roll',{state:G, stockId:diceContext.id, dice})
+    if(!data){ document.getElementById('rollBtn').disabled=false; return }
+    if(!data.success){ showToast(data.error,'error'); document.getElementById('rollBtn').disabled=false; return }
+
+    const resultText = \`サイコロ \${dice} → \${data.label}\${data.effect?' ('+( data.effect>0?'+':'')+fmt(data.effect)+')':''}\`
+    document.getElementById('diceResult').textContent = resultText
+    G = data.state
+    if(data.effect > 0) spawnCoins(6)
+    setTimeout(()=>{
+      document.getElementById('dice-panel').classList.add('hidden')
+      renderGame()
+    },1500)
+  }
+}
+
+function cancelDice(){
+  diceContext = null
+  document.getElementById('dice-panel').classList.add('hidden')
+}
+
+// Shrine target
+function showShrineTargets(){
+  const cp = G.players[G.currentPlayer]
+  const bonus = G.pendingShrineBonus
+  if(!bonus){ document.getElementById('dice-panel').classList.add('hidden'); renderGame(); return }
+
+  document.getElementById('shrineAmountLabel').textContent = fmt(bonus.amount)+'もらえます！'
+  const el = document.getElementById('shrine-targets')
+  el.innerHTML = G.players
+    .filter(p=>p.id!==cp.id)
+    .map(p=>\`
+    <button class="btn btn-warning w-full" onclick="doShrineCollect(\${p.id})">
+      \${PLAYER_EMOJIS[p.id]} \${p.name}（手持: \${fmt(p.cash)}）
+    </button>\`).join('')
+  document.getElementById('shrine-overlay').classList.add('show')
+  document.getElementById('dice-panel').classList.add('hidden')
+}
+
+async function doShrineCollect(targetPlayerId){
+  const data = await apiPost('/action/shrine-collect',{state:G, targetPlayerId})
+  if(!data) return
+  if(!data.success){ showToast(data.error,'error'); return }
+  G = data.state
+  document.getElementById('shrine-overlay').classList.remove('show')
+  renderGame()
+  spawnCoins(5)
+}
+
+// Lend panel
+function showLendPanel(){
+  const cp = G.players[G.currentPlayer]
+  const sel = document.getElementById('lendTarget')
+  sel.innerHTML = '<option value="">-- 選ぶ --</option>'+
+    G.players.filter(p=>p.id!==cp.id).map(p=>\`<option value="\${p.id}">\${PLAYER_EMOJIS[p.id]} \${p.name}（手持:\${fmt(p.cash)}）</option>\`).join('')
+  document.getElementById('lend-panel').classList.remove('hidden')
+}
+function hideLendPanel(){ document.getElementById('lend-panel').classList.add('hidden') }
+
+async function doLend(){
+  const toPlayerId = parseInt(document.getElementById('lendTarget').value)
+  const amount = parseInt(document.getElementById('lendAmount').value)
+  if(isNaN(toPlayerId)){ showToast('相手を選んでね','error'); return }
+  if(!amount||amount<=0){ showToast('金額を入力してね','error'); return }
+  const data = await apiPost('/action/lend',{state:G, toPlayerId, amount})
+  if(!data) return
+  if(!data.success){ showToast(data.error,'error'); return }
+  G = data.state
+  hideLendPanel()
+  renderGame()
+  showToast('🏦 融資した！','info')
+}
+
+// Repay panel
+function showRepayPanel(){
+  const cp = G.players[G.currentPlayer]
+  const el = document.getElementById('repay-list')
+  el.innerHTML = cp.debts.map(d=>\`
+    <div class="flex justify-between items-center py-2 border-b border-white/20">
+      <div class="text-sm">\${G.players[d.fromPlayerId].name}へ \${fmt(d.amount)}</div>
+      <div class="flex gap-1">
+        <input type="number" id="repayAmt_\${d.fromPlayerId}" placeholder="額" min="100" step="100"
+          class="w-24 rounded px-2 py-1 text-black text-sm">
+        <button class="btn btn-success btn-sm" onclick="doRepay(\${d.fromPlayerId})">返済</button>
+      </div>
+    </div>\`).join('')
+  document.getElementById('repay-panel').classList.remove('hidden')
+}
+function hideRepayPanel(){ document.getElementById('repay-panel').classList.add('hidden') }
+
+async function doRepay(fromPlayerId){
+  const amount = parseInt(document.getElementById('repayAmt_'+fromPlayerId).value)
+  if(!amount||amount<=0){ showToast('金額を入力してね','error'); return }
+  const data = await apiPost('/action/repay',{state:G, fromPlayerId, amount})
+  if(!data) return
+  if(!data.success){ showToast(data.error,'error'); return }
+  G = data.state
+  hideRepayPanel()
+  renderGame()
+  showToast('💳 返済した！','info')
 }
 
 // ============================================================
-// イベントカード
+// End Turn
 // ============================================================
-async function drawEvent(){
-  if(processingAction)return
-  processingAction=true
+async function doEndTurn(){
+  if(processingAction) return
+  processingAction = true
   try{
-    const res=await fetch('/api/game/draw-event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G})})
-    const d=await res.json()
-    if(d.success){ G=d.state; showEventOverlay(d.card) }
-  }catch(e){showToast('❌ エラー','error')}
-  finally{processingAction=false}
+    const res = await fetch('/api/game/end-turn',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({state:G})
+    })
+    const data = await res.json()
+    if(!data.success){ showToast(data.error||'エラー','error'); return }
+    G = data.state
+
+    // Game over?
+    if(G.gameOver || G.phase==='result'){
+      showResult()
+      return
+    }
+
+    // Event card?
+    if(G.eventCard && !G._eventShown){
+      G._eventShown = true
+      showEventCard(G.eventCard)
+      return
+    }
+
+    // Bankruptcy?
+    if(G.eventCard && G.eventCard.type==='bankruptcy'){
+      handleBankruptcy()
+      return
+    }
+
+    // Handoff?
+    if(G.needsHandoff){
+      const nextP = G.players[G.handoffTo]
+      showHandoff(nextP)
+    } else {
+      renderGame()
+      // AI auto-play
+      if(G.players[G.currentPlayer].isAI){
+        setTimeout(doAITurn, 800)
+      }
+    }
+  } finally{
+    processingAction = false
+  }
 }
 
-function showEventOverlay(card){
-  const typeColor={inflation:'#4CAF50',deflation:'#f44336',work_bonus:'#22c55e',
-    stock_up:'#f59e0b',stock_down:'#dc2626',bankrupt:'#7f1d1d',
-    interest_up:'#2563eb',force_even:'#7c3aed',force_odd:'#db2777',investor:'#059669'}
-  const col=typeColor[card.type]||'#374151'
-  document.getElementById('eventCardDisplay').style.background=\`linear-gradient(135deg,\${col},\${col}cc)\`
-  document.getElementById('eventCardDisplay').innerHTML=\`
-    <div style="font-size:3.5rem" class="bounce mb-2">\${card.title.split(' ')[0]}</div>
-    <h3 class="text-xl font-black mb-2 text-white">\${card.title}</h3>
-    <p class="text-white font-semibold text-sm opacity-90">\${card.desc}</p>
-  \`
-  document.getElementById('eventOverlay').style.display='flex'
+// ============================================================
+// Event Card
+// ============================================================
+function showEventCard(card){
+  document.getElementById('eventEmoji').textContent = card.emoji
+  document.getElementById('eventName').textContent  = card.name
+  document.getElementById('eventDesc').textContent  = card.desc
+  document.getElementById('event-overlay').classList.add('show')
 }
 
 function dismissEvent(){
-  document.getElementById('eventOverlay').style.display='none'
-  renderGame()
-}
+  document.getElementById('event-overlay').classList.remove('show')
+  G._eventShown = false
 
-// ============================================================
-// 神社モーダル
-// ============================================================
-function showShrineModal(amount){
-  pendingShrineAmount=amount
-  document.getElementById('shrineDesc').textContent=\`合計 \${amount}円を受け取ります。誰から受け取るか選んでください。\`
-  shrineSelections={}
-  document.getElementById('shrineTargetList').innerHTML=G.players
-    .filter((_,i)=>i!==G.currentPlayer)
-    .map(p=>\`
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-sm font-bold text-white flex-1">\${esc(p.name)}（現金\${p.cash}円）</span>
-        <input type="number" min="0" value="0" max="\${p.cash}" class="game-input" style="width:70px;font-size:.85rem;padding:4px 8px" id="shrine_\${p.id}" placeholder="0">
-        <span class="text-sm text-gray-400">円</span>
-      </div>\`).join('')
-  document.getElementById('shrineModal').style.display='flex'
-}
+  if(G.eventCard && G.eventCard.type === 'bankruptcy'){
+    handleBankruptcy()
+    return
+  }
 
-async function confirmShrineTarget(){
-  const targets=[]
-  G.players.forEach((p,i)=>{
-    if(i===G.currentPlayer)return
-    const inp=document.getElementById('shrine_'+p.id)
-    const amt=parseInt(inp?.value)||0
-    if(amt>0) targets.push({playerId:p.id,amount:amt})
-  })
-  closeShrineModal()
-  await callAction({type:'shrine_collect',targets},false)
-}
-function closeShrineModal(){
-  document.getElementById('shrineModal').style.display='none'
-}
-
-// ============================================================
-// ターン終了
-// ============================================================
-async function endTurn(){
-  if(processingAction)return
-  processingAction=true
-  document.getElementById('btnEndTurn').disabled=true
-  setMsg('⌛ ターン処理中...')
-  try{
-    const res=await fetch('/api/game/end-turn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G})})
-    const d=await res.json()
-    if(d.success){
-      G=d.state
-      if(G.gameOver){showResult();return}
-      if(G.needsHandoff&&G.handoffTo!==null) showPass(G.handoffTo)
-      else{showScreen('game');renderGame()}
+  if(G.needsHandoff){
+    const nextP = G.players[G.handoffTo]
+    showHandoff(nextP)
+  } else {
+    renderGame()
+    if(G.players[G.currentPlayer].isAI){
+      setTimeout(doAITurn, 800)
     }
-  }catch(e){showToast('❌ 通信エラー','error')}
-  finally{processingAction=false;setMsg('');document.getElementById('btnEndTurn').disabled=false}
+  }
+}
+
+async function handleBankruptcy(){
+  // Force current player (who drew the card = rank 1) to sell all companies
+  const leaderId = G.turnOrder[0]
+  const leader = G.players[leaderId]
+  if(leader.companies.length === 0){
+    showToast('🏚️ 倒産！でも会社がありませんでした','error')
+    afterBankruptcy()
+    return
+  }
+  showToast('🏚️ 倒産！'+leader.name+'が会社を全て売却します','error')
+  // auto-sell all
+  for(const cid of [...leader.companies]){
+    const res = await fetch('/api/game/action/sell-company',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({state:G, companyId:cid})
+    })
+    const d = await res.json()
+    if(d.success) G = d.state
+  }
+  afterBankruptcy()
+}
+
+function afterBankruptcy(){
+  if(G.needsHandoff){
+    showHandoff(G.players[G.handoffTo])
+  } else {
+    renderGame()
+  }
 }
 
 // ============================================================
-// 結果発表
+// Handoff
+// ============================================================
+function showHandoff(nextPlayer){
+  document.getElementById('handoffPlayerName').textContent = nextPlayer.name
+  document.getElementById('handoffTitle').textContent = '端末を渡してください 🔒'
+  document.getElementById('handoffReadyLabel').textContent = nextPlayer.name+'の番だよ！準備完了'
+  document.getElementById('screen-handoff').classList.add('show')
+}
+
+function readyHandoff(){
+  document.getElementById('screen-handoff').classList.remove('show')
+  G.needsHandoff = false
+  G.handoffTo = null
+  renderGame()
+  if(G.players[G.currentPlayer].isAI){
+    setTimeout(doAITurn, 800)
+  }
+}
+
+// ============================================================
+// AI Turn
+// ============================================================
+async function doAITurn(){
+  const cp = G.players[G.currentPlayer]
+  if(!cp.isAI) return
+
+  setActionMsg('🤖 '+cp.name+' が考え中...')
+
+  // Simple AI: buy cheapest available, work if poor
+  try{
+    // Try to buy a company if we have enough cash and no action used
+    if(cp.actionUsed === 0){
+      const affordable = G.companies
+        .filter(c=>!['restaurant3','railway'].includes(c.id) && !cp.companies.includes(c.id) && cp.cash >= c.cost)
+        .sort((a,b)=>a.cost-b.cost)
+      if(affordable.length>0 && Math.random()>0.4){
+        const pick = affordable[0]
+        const d = await apiPost('/action/buy-company',{state:G, companyId:pick.id})
+        if(d?.success){ G=d.state; await delay(500) }
+      } else if(cp.cash < 300 || Math.random()>0.7){
+        const d = await apiPost('/action/work',{state:G})
+        if(d?.success){ G=d.state; await delay(500) }
+      } else {
+        // deposit some
+        const depositAmt = Math.floor(cp.cash * 0.3 / 100)*100
+        if(depositAmt>=100){
+          const d = await apiPost('/action/deposit',{state:G, amount:depositAmt})
+          if(d?.success){ G=d.state; await delay(500) }
+        } else {
+          const d = await apiPost('/action/work',{state:G})
+          if(d?.success){ G=d.state; await delay(500) }
+        }
+      }
+    }
+
+    // Roll for owned companies
+    for(const cid of cp.companies){
+      const comp = G.companies.find(x=>x.id===cid)
+      if(!comp || comp.rolls.length===0) continue
+      if(G.players[G.currentPlayer].actionUsed >= (G.players[G.currentPlayer].extraAction?2:1)) break
+      const diceData = await fetch('/api/game/roll-dice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G})}).then(r=>r.json())
+      const d = await apiPost('/action/company-roll',{state:G, companyId:cid, dice:diceData.dice})
+      if(d?.success){ G=d.state; await delay(500) }
+      if(G.pendingShrineBonus){
+        // Auto pick poorest target
+        const targets = G.players.filter(p=>p.id!==G.currentPlayer).sort((a,b)=>b.cash-a.cash)
+        if(targets.length>0){
+          const sd = await apiPost('/action/shrine-collect',{state:G, targetPlayerId:targets[0].id})
+          if(sd?.success) G=sd.state
+        }
+      }
+    }
+
+    renderGame()
+    setActionMsg('')
+    await delay(600)
+    doEndTurn()
+  } catch(e){
+    console.error('AI error',e)
+    doEndTurn()
+  }
+}
+
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)) }
+
+// ============================================================
+// Result
 // ============================================================
 function showResult(){
+  const sorted = [...G.players].sort((a,b)=>b.totalAssets-a.totalAssets)
+  document.getElementById('resultYears').textContent = G.maxYears+'年間のゲーム終了！'
+
+  document.getElementById('result-ranks').innerHTML = sorted.map((p,i)=>\`
+    <div class="rank-row rank-\${i<3?i+1:'other'}">
+      <div class="text-2xl">\${['🥇','🥈','🥉','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣','🔟'][i]||i+1+'.'}</div>
+      <div class="flex-1">
+        <div class="font-bold">\${PLAYER_EMOJIS[p.id]} \${p.name}</div>
+        <div class="text-sm">現金:\${fmt(p.cash)} ATM:\${fmt(p.atm)} 株:\${fmt(p.stocks.reduce((s,st)=>{const x=G.stocks.find(y=>y.id===st.id);return s+(x?x.buyPrice*st.qty:0)},0))}</div>
+      </div>
+      <div class="font-black text-xl">\${fmt(p.totalAssets)}</div>
+    </div>
+  \`).join('')
+
+  document.getElementById('result-lesson').innerHTML = \`
+    <p>✅ <b>現金だけじゃなく、ATMや株にも分けて持つ</b>のが大切！</p>
+    <p>✅ <b>ATMにお金を預けると利息が増える</b>よ！</p>
+    <p>✅ <b>株はリスクがある</b>けど大きく増えることも！</p>
+    <p>✅ <b>会社を経営するとサイコロ次第で大儲け</b>できる！</p>
+    <p>✅ <b>イベントに備えて余裕資金</b>を持っておこう！</p>
+  \`
+
   showScreen('result')
-  if(!G)return
-  const sorted=[...G.players].sort((a,b)=>b.totalAssets-a.totalAssets)
-  const winner=sorted[0]
-  const medals=['🥇','🥈','🥉','4️⃣']
-  document.getElementById('winnerAnnounce').textContent=\`🎊 \${winner.name} の勝ち！ \${winner.totalAssets}円\`
-  document.getElementById('resultRanking').innerHTML=sorted.map((p,i)=>\`
-    <div class="flex items-center gap-3 rounded-2xl p-3" style="background:\${['linear-gradient(135deg,#FFD700,#FFA000)','linear-gradient(135deg,#B0BEC5,#78909C)','linear-gradient(135deg,#CD7F32,#8D4004)','#f3f4f6'][i]||'#f3f4f6'}">
-      <span class="text-xl">\${medals[i]||'📌'}</span>
-      <div class="flex-1 text-sm font-black \${i<3?'text-white':'text-gray-700'} truncate">\${p.isAI?'🤖':'👤'} \${esc(p.name)}</div>
-      <div class="text-sm font-black \${i<3?'text-white':'text-gray-700'}">\${p.totalAssets}円</div>
-    </div>\`).join('')
-
-  document.getElementById('resultDetail').innerHTML=sorted.map(p=>\`
-    <div class="flex justify-between text-xs">
-      <span>\${esc(p.name)}：</span>
-      <span>現金\${p.cash} + ATM\${p.atm} + 株\${calcStockVal(p)} = \${p.totalAssets}円</span>
-    </div>\`).join('')
-
-  spawnCoins(16)
+  spawnCoins(20)
 }
 
-// ============================================================
-// API 呼び出しヘルパー
-// ============================================================
-async function callAction(action, useAction=true){
-  if(processingAction)return null
-  processingAction=true; setMsg('⌛ 処理中...')
-  try{
-    const res=await fetch('/api/game/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G,action})})
-    const d=await res.json()
-    if(d.success){ G=d.state; renderGame(); spawnCoins(2) }
-    else showToast('❌ '+(d.error||'エラー'),'error')
-    return d
-  }catch(e){showToast('❌ 通信エラー','error');return null}
-  finally{processingAction=false;setMsg('')}
-}
-
-// ============================================================
-// サイコロアニメーション
-// ============================================================
-function showDice(n){
-  const faces=['','⚀','⚁','⚂','⚃','⚄','⚅']
-  const el=document.getElementById('diceDisplay')
-  if(!el)return
-  let c=0
-  const t=setInterval(()=>{
-    el.textContent=faces[Math.floor(Math.random()*6)+1]; c++
-    if(c>8){
-      clearInterval(t)
-      el.textContent=faces[n]||'🎲'
-      el.classList.add('pop')
-      setTimeout(()=>el.classList.remove('pop'),500)
-    }
-  },80)
-  document.getElementById('diceNote').textContent=\`\${n}の目が出た！\`
-}
-
-// ============================================================
-// UI ヘルパー
-// ============================================================
-function setMsg(m){const e=document.getElementById('actionMsg');if(e)e.textContent=m}
-
-function showToast(msg,type='info'){
-  const el=document.createElement('div')
-  el.style.cssText=\`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:\${type==='error'?'#ef4444':'#22c55e'};color:white;padding:10px 20px;
-    border-radius:50px;font-weight:800;font-size:.9rem;z-index:9999;
-    box-shadow:0 4px 18px rgba(0,0,0,.35);animation:fadeInUp .3s ease-out;\`
-  el.textContent=msg; document.body.appendChild(el)
-  setTimeout(()=>el.remove(),2600)
-}
-
-function spawnCoins(n){
-  const coins=['💴','💵','🪙','💰','⭐','✨']
-  for(let i=0;i<n;i++) setTimeout(()=>{
-    const el=document.createElement('div'); el.className='coin-particle'
-    el.textContent=coins[Math.floor(Math.random()*coins.length)]
-    el.style.cssText=\`left:\${Math.random()*100}%;top:-40px;font-size:\${Math.random()*1.2+.8}rem;animation-duration:\${Math.random()*.8+1}s;\`
-    document.getElementById('coinArea').appendChild(el)
-    setTimeout(()=>el.remove(),2000)
-  },i*130)
-}
-
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-
-function getCompanyDesc(id){
-  const map={
-    restaurant:'1-2→-10円 / 3-4→+10円 / 5-6→+30円',
-    restaurant3:'1→-10円 / 2-6→+40円',
-    bank:'他プレイヤーへ融資。年10〜20円の利息を回収',
-    bus:'5-6が出たら追加行動1回',
-    train:'5-6が出たらもう一度ターンが回ってくる',
-    shrine:'1-2→50円 / 3-4→25円 相手から受け取る',
-  }
-  return map[id]||''
-}
-
-// ============================================================
-// 確認モーダル
-// ============================================================
-function showConfirm(title,body,onOk,label){
-  confirmCB=onOk
-  document.getElementById('confirmTitle').textContent=title
-  document.getElementById('confirmBody').innerHTML=body
-  const okBtn=document.getElementById('confirmOkBtn')
-  if(okBtn) okBtn.textContent=label||'✅ 決定！'
-  document.getElementById('confirmModal').style.display='flex'
-}
-function closeConfirm(){document.getElementById('confirmModal').style.display='none';confirmCB=null}
-function onConfirmOk(){const cb=confirmCB;closeConfirm();if(cb)cb()}
-
-// ============================================================
-// ルール・終了
-// ============================================================
-function showRules(){document.getElementById('rulesModal').style.display='flex'}
-function closeRules(){document.getElementById('rulesModal').style.display='none'}
-function confirmQuit(){
-  showConfirm('🚪 ゲームをやめますか？','<div class="text-center text-gray-300">タイトルに戻ります</div>',()=>showScreen('title'),'🚪 やめる')
-}
-
-// ============================================================
-// 初期化
-// ============================================================
-window.onload=()=>{
-  generateStars('stars',80)
-  buildPlayerRows()
+function backToTitle(){
+  G = null
   showScreen('title')
 }
+
+function replayGame(){
+  G = null
+  showScreen('setup')
+}
+
+// ============================================================
+// Confirm Modal
+// ============================================================
+function showConfirm(title, body, onOk){
+  confirmCallback = onOk
+  document.getElementById('confirmTitle').textContent = title
+  document.getElementById('confirmBody').innerHTML = body
+  document.getElementById('confirm-modal').classList.remove('hidden')
+}
+function closeConfirm(){
+  confirmCallback = null
+  document.getElementById('confirm-modal').classList.add('hidden')
+}
+function onConfirmOk(){
+  const cb = confirmCallback
+  closeConfirm()
+  if(cb) cb()
+}
+
+// ============================================================
+// Tutorial
+// ============================================================
+const TUTORIALS = [
+  {title:'🎮 ゲームの目的',content:'ATM残高＋保有株価額＋手持ち現金が一番多い人の勝ち！<br>会社の価値は勝利条件には含まれないよ。'},
+  {title:'📅 1年の流れ',content:'① ATM残高の多い人から順番に行動。<br>② 2年目以降は1位の人がイベントカードを引く。<br>③ 1年に1回だけ行動できる（特別カードで2回可）。'},
+  {title:'🎯 できること',content:'<b>① はたらく</b>: 100円もらえる。<br><b>② ATM</b>: お金を預ける・引き出す。利息がつくよ！<br><b>③ 会社を買う</b>: 購入後にサイコロを振って収益ゲット。<br><b>④ 株を買う</b>: サイコロの偶奇で増減。'},
+  {title:'🏢 会社について',content:'飲食店・バス会社・神社・金融機関の4種類。<br>購入したらサイコロを振れる！<br>アップグレードすると効果がパワーアップ。<br>会社は売れるけど資産には含まれないよ。'},
+  {title:'📈 株について',content:'日本株(500円/株)・外国株(1000円/株)の2種類。<br>サイコロ偶数 → 大きく増える！<br>サイコロ奇数 → 損してしまう…。<br>リスクとリターンを考えて投資しよう！'},
+  {title:'🏧 ATMと利息',content:'ATMにお金を預けると年末に利息がもらえる！<br>200〜1500円 → +100円/年<br>1500〜2600円 → +200円/年<br>2600〜3500円 → +300円/年<br>3500円以上 → +600円/年'},
+  {title:'🎴 イベントカード',content:'2年目以降、1位のプレイヤーが毎年引く。<br>インフレ・倒産・株高騰など10種類！<br>良いカードも悪いカードもあるよ。'},
+]
+
+function showTutorial(){
+  document.getElementById('tutorial-content').innerHTML = TUTORIALS.map(t=>\`
+    <div class="card p-3 mb-2">
+      <div class="font-bold mb-1">\${t.title}</div>
+      <div class="opacity-80">\${t.content}</div>
+    </div>\`).join('')
+  document.getElementById('tutorial-modal').classList.remove('hidden')
+}
+function closeTutorial(){
+  document.getElementById('tutorial-modal').classList.add('hidden')
+}
+
+// ============================================================
+// Quit
+// ============================================================
+function confirmQuit(){
+  showConfirm('🚪 やめますか？', 'ゲームの進行状況は失われます。', ()=>{
+    G = null
+    showScreen('title')
+  })
+}
+
+// ============================================================
+// Tab switching
+// ============================================================
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.tab===name)
+  })
+  document.querySelectorAll('.tab-content').forEach(t=>{
+    t.classList.add('hidden')
+  })
+  const el = document.getElementById('tab-'+name)
+  if(el) el.classList.remove('hidden')
+
+  if(name==='portfolio') renderPortfolio()
+  if(name==='market')    renderMarket()
+  if(name==='ranking')   renderRanking()
+  if(name==='log')       renderLog()
+}
+
+// ============================================================
+// Coin animation
+// ============================================================
+function spawnCoins(n){
+  for(let i=0;i<n;i++){
+    setTimeout(()=>{
+      const coin = document.createElement('div')
+      coin.className='coin'
+      coin.textContent = ['💰','💵','💴','🪙'][Math.floor(Math.random()*4)]
+      coin.style.left = (20+Math.random()*60)+'%'
+      coin.style.bottom = '20%'
+      document.body.appendChild(coin)
+      setTimeout(()=>coin.remove(),1200)
+    }, i*100)
+  }
+}
+
+// ============================================================
+// Toast
+// ============================================================
+function showToast(msg, type='info'){
+  const t = document.createElement('div')
+  t.className = 'toast'
+  t.style.background = type==='error'?'#f44336':'#4CAF50'
+  t.style.color='#fff'
+  t.textContent = msg
+  document.body.appendChild(t)
+  setTimeout(()=>t.remove(),2500)
+}
+
+// ============================================================
+// setActionMsg helper
+// ============================================================
+function setActionMsg(msg){
+  const el = document.getElementById('actionMsg')
+  if(el) el.textContent = msg
+}
+
+// ============================================================
+// Initial render
+// ============================================================
+// Pre-select defaults
+selectGameLength(10)
 </script>
 </body>
 </html>`
