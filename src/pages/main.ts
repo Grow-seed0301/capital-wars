@@ -676,8 +676,8 @@ function renderActions(){
   const actions = [
     { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork,        enabled: canAct },
     { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',                                                fn: showATMPanel,  enabled: canAct },
-    { icon:'🏢', label:'会社を買う', sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: canAct },
-    { icon:'📈', label:'株を買う',   sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: canAct },
+    { icon:'🏢', label:'会社を買う', sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: true },
+    { icon:'📈', label:'株を買う',   sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: true },
   ]
   if(cp.companies.includes('bank') && !cp.isAI)
     actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel, enabled: true })
@@ -848,74 +848,133 @@ function renderMarket(){
   const cp = G.players[G.currentPlayer]
   const canAct = cp.actionUsed < (cp.extraAction?2:1) && !cp.isAI
   const el = document.getElementById('market-content')
+  el.innerHTML = ''
 
-  let html = \`<h3 class="font-bold mb-2">🏢 会社マーケット</h3>
-  <div class="grid grid-cols-2 gap-2 mb-4">\`
+  // ── 会社マーケット ──
+  const compTitle = document.createElement('h3')
+  compTitle.className = 'font-bold mb-2'
+  compTitle.textContent = '🏢 会社マーケット'
+  el.appendChild(compTitle)
+
+  const compGrid = document.createElement('div')
+  compGrid.className = 'grid grid-cols-2 gap-2 mb-4'
 
   G.companies.filter(c=>!['restaurant3','railway'].includes(c.id)).forEach(comp=>{
     const owned = cp.companies.includes(comp.id)
     const canBuy = canAct && !owned && cp.cash >= comp.cost
-    html += \`
-    <div class="item-card \${owned?'owned':canBuy?'':'disabled'}" onclick="\${canBuy?'doBuyCompany(\\\"'+comp.id+'\\\")':owned?'showToast(\\\"すでに持っています\\\",\\\"error\\\")':''}">
+
+    // サイコロ収益テキスト生成
+    const rollText = comp.rolls.map(r=>'🎲'+r.range[0]+'-'+r.range[1]+': '+r.label).join('<br>')
+
+    const card = document.createElement('div')
+    card.className = 'item-card ' + (owned ? 'owned' : canBuy ? '' : 'disabled')
+    card.innerHTML = \`
       <div class="text-2xl mb-1">\${comp.emoji}</div>
       <div class="font-bold text-sm">\${comp.name}</div>
       <div class="text-xs opacity-70 mb-1">\${comp.desc}</div>
-      <div class="font-black" style="color:var(--c3);">\${fmt(comp.cost)}</div>
-      \${owned?'<div class="text-xs text-green-400 font-bold">✅ 所持済み</div>':''}
-    </div>\`
+      <div class="font-black mb-1" style="color:var(--c3);">\${fmt(comp.cost)}</div>
+      <div class="text-xs" style="color:#90caf9;">\${rollText}</div>
+      \${owned ? '<div class="text-xs text-green-400 font-bold mt-1">✅ 所持済み</div>' : ''}
+    \`
+    if(canBuy){
+      card.style.cursor = 'pointer'
+      card.addEventListener('click', ()=> doBuyCompany(comp.id))
+    } else if(owned){
+      card.style.cursor = 'default'
+      card.addEventListener('click', ()=> showToast('すでに持っています','error'))
+    }
+    compGrid.appendChild(card)
   })
-  html += \`</div>\`
+  el.appendChild(compGrid)
 
-  html += \`<h3 class="font-bold mb-2">📈 株マーケット</h3>
-  <div class="grid grid-cols-2 gap-2">\`
+  // ── 株マーケット ──
+  const stTitle = document.createElement('h3')
+  stTitle.className = 'font-bold mb-2'
+  stTitle.textContent = '📈 株マーケット'
+  el.appendChild(stTitle)
+
+  const stGrid = document.createElement('div')
+  stGrid.className = 'grid grid-cols-2 gap-2'
+
   G.stocks.forEach(st=>{
     const holding = cp.stocks.find(s=>s.id===st.id)
     const qty = holding?.qty||0
     let price = st.buyPrice
-    if(G.activeEventTypes.includes('stock_x2')) price*=2
-    if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
+    if(G.activeEventTypes.includes('stock_x2')) price *= 2
+    if(G.activeEventTypes.includes('stock_half')) price = Math.floor(price/2)
     const canBuy = canAct && cp.cash >= price
-    html += \`
-    <div class="item-card \${canBuy?'':'disabled'}" onclick="\${canBuy?'doBuyStock(\\\"'+st.id+'\\\")':''}">
+
+    const card = document.createElement('div')
+    card.className = 'item-card ' + (canBuy ? '' : 'disabled')
+    card.innerHTML = \`
       <div class="text-2xl mb-1">\${st.emoji}</div>
       <div class="font-bold text-sm">\${st.name}</div>
       <div class="text-xs opacity-70 mb-1">\${st.desc}</div>
-      <div class="font-black" style="color:var(--c3);">\${fmt(price)}/株</div>
-      \${qty>0?'<div class="text-xs text-blue-300 font-bold">📊 '+qty+'株保有</div>':''}
-    </div>\`
+      <div class="font-black mb-1" style="color:var(--c3);">\${fmt(price)}/株</div>
+      <div class="text-xs" style="color:#90caf9;">偶数: +\${yen(st.rolls[0].effect)}円 / 奇数: \${yen(st.rolls[1].effect)}円</div>
+      \${qty>0 ? '<div class="text-xs text-blue-300 font-bold mt-1">📊 '+qty+'株保有</div>' : ''}
+    \`
+    if(canBuy){
+      card.style.cursor = 'pointer'
+      card.addEventListener('click', ()=> doBuyStock(st.id))
+    }
+    stGrid.appendChild(card)
   })
-  html += \`</div>\`
+  el.appendChild(stGrid)
 
-  // サイコロアクション（保有済み会社・株のロール）
+  // ── サイコロアクション（保有済み会社・株のロール）──
+  const diceTitle = document.createElement('h3')
+  diceTitle.className = 'font-bold mt-4 mb-2'
+  diceTitle.textContent = '🎲 サイコロアクション'
+  el.appendChild(diceTitle)
+
+  const diceList = document.createElement('div')
+  diceList.className = 'space-y-2'
+
   let hasRollable = false
-  html += \`<h3 class="font-bold mt-4 mb-2">🎲 サイコロアクション</h3><div class="space-y-2">\`
+
   cp.companies.forEach(cid=>{
     const comp = G.companies.find(x=>x.id===cid)
     if(!comp || comp.rolls.length===0 || comp.id==='bank') return
     hasRollable = true
-    html += \`
-    <div class="item-card owned \${canAct?'':'disabled'}" onclick="\${canAct?'startCompanyRoll(\\\"'+cid+'\\\")':''}">
+    const card = document.createElement('div')
+    card.className = 'item-card owned ' + (canAct ? '' : 'disabled')
+    card.innerHTML = \`
       \${comp.emoji} <span class="font-bold">\${comp.name}</span> のサイコロ
       <div class="text-xs opacity-70">\${comp.rolls.map(r=>r.range[0]+'-'+r.range[1]+': '+r.label).join(' / ')}</div>
-    </div>\`
+    \`
+    if(canAct){
+      card.style.cursor = 'pointer'
+      card.addEventListener('click', ()=> startCompanyRoll(cid))
+    }
+    diceList.appendChild(card)
   })
+
   cp.stocks.forEach(s=>{
     if(s.qty===0) return
     const st = G.stocks.find(x=>x.id===s.id)
     if(!st) return
     hasRollable = true
-    html += \`
-    <div class="item-card owned \${canAct?'':'disabled'}" onclick="\${canAct?'startStockRoll(\\\"'+s.id+'\\\")':''}">
+    const card = document.createElement('div')
+    card.className = 'item-card owned ' + (canAct ? '' : 'disabled')
+    card.innerHTML = \`
       \${st.emoji} <span class="font-bold">\${st.name}</span> の配当 (\${s.qty}株)
       <div class="text-xs opacity-70">偶数: +\${yen(st.rolls[0].effect*s.qty)}円 / 奇数: \${yen(st.rolls[1].effect*s.qty)}円</div>
-    </div>\`
+    \`
+    if(canAct){
+      card.style.cursor = 'pointer'
+      card.addEventListener('click', ()=> startStockRoll(s.id))
+    }
+    diceList.appendChild(card)
   })
-  if(!hasRollable){
-    html += \`<div class="text-sm opacity-50">会社・株を購入するとサイコロを振れます</div>\`
-  }
-  html += \`</div>\`
 
-  el.innerHTML = html
+  if(!hasRollable){
+    const empty = document.createElement('div')
+    empty.className = 'text-sm opacity-50'
+    empty.textContent = '会社・株を購入するとサイコロを振れます'
+    diceList.appendChild(empty)
+  }
+  el.appendChild(diceList)
 }
 
 function renderRanking(){
@@ -1069,8 +1128,9 @@ async function doSellCompany(companyId){
 }
 
 // Stock buy
-function doBuyStock(stockId){
+async function doBuyStock(stockId){
   const st = G.stocks.find(s=>s.id===stockId)
+  if(!st){ showToast('株データが見つかりません','error'); return }
   let price = st.buyPrice
   if(G.activeEventTypes.includes('stock_x2')) price*=2
   if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
@@ -1084,7 +1144,10 @@ function doBuyStock(stockId){
       G = data.state
       renderGame()
       spawnCoins(4)
-      showToast('📈 購入！','info')
+      showToast('📈 '+st.name+'を購入！サイコロを振ろう！','info')
+      // 購入後は株サイコロをすぐ振れるよう遷移
+      switchTab('actions')
+      startStockRoll(stockId)
     }
   )
 }

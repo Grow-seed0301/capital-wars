@@ -261,7 +261,8 @@ gameRouter.post('/action/buy-company', async (c) => {
   const { state, companyId } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  if (!canAct(p)) return c.json({ success: false, error: 'これ以上行動できません' })
+  // 購入はアクション消費なし（サイコロを振る行動が本消費）
+  // canActチェックなし → 残りアクション0でも購入可能
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp) return c.json({ success: false, error: '会社が見つかりません' })
