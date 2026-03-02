@@ -316,11 +316,11 @@ gameRouter.post('/action/sell-company', async (c) => {
   if (!comp) return c.json({ success: false, error: '会社が見つかりません' })
   if (!p.companies.includes(companyId)) return c.json({ success: false, error: '所有していません' })
 
-  const sellPrice = Math.floor(comp.cost * 0.5) // 半額で売却
+  const sellPrice = comp.cost // 購入額を全額返却
   p.cash += sellPrice
   p.companies = p.companies.filter((id: string) => id !== companyId)
   recalcAssets(p, ns)
-  ns.log = [`💸 ${p.name}が「${comp.emoji}${comp.name}」を${sellPrice}円で売却`, ...ns.log.slice(0,29)]
+  ns.log = [`💸 ${p.name}が「${comp.emoji}${comp.name}」を${sellPrice}円で売却（購入額全額回収）`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns })
 })

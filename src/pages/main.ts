@@ -704,12 +704,13 @@ function renderActions(){
 function renderPortfolio(){
   const cp = G.players[G.currentPlayer]
   const el = document.getElementById('portfolio-content')
-  const stData = G.stocks
+  el.innerHTML = ''
 
-  let html = \`<div class="space-y-3">\`
+  const wrap = document.createElement('div')
+  wrap.className = 'space-y-3'
 
-  // Cash & ATM
-  html += \`
+  // 手持ち現金
+  wrap.innerHTML += \`
   <div class="card-white p-3 flex justify-between items-center">
     <div><div class="text-xs text-gray-500">💵 手持ち現金</div>
     <div class="text-xl font-black" style="color:var(--c1);">\${fmt(cp.cash)}</div></div>
@@ -722,74 +723,89 @@ function renderPortfolio(){
     <div class="text-3xl">🏧</div>
   </div>\`
 
-  // Stocks
+  // 保有株
   if(cp.stocks.length > 0){
-    html += \`<div class="card-white p-3"><div class="font-bold mb-2">📈 保有株</div>\`
+    let sh = \`<div class="card-white p-3"><div class="font-bold mb-2">📈 保有株</div>\`
     cp.stocks.forEach(s=>{
-      const st = stData.find(x=>x.id===s.id)
+      const st = G.stocks.find(x=>x.id===s.id)
       if(!st) return
-      html += \`
-      <div class="flex justify-between items-center py-1 border-b border-gray-100">
+      sh += \`<div class="flex justify-between items-center py-1 border-b border-gray-100">
         <div>\${st.emoji} \${st.name} × \${s.qty}株</div>
         <div class="font-bold">\${fmt(st.buyPrice*s.qty)}</div>
       </div>\`
     })
-    html += \`</div>\`
+    sh += '</div>'
+    wrap.innerHTML += sh
   }
 
-  // Companies
+  // 保有会社（addEventListener で確実に動作）
   if(cp.companies.length > 0){
-    html += \`<div class="card-white p-3"><div class="font-bold mb-2">🏢 保有会社</div>\`
+    const compDiv = document.createElement('div')
+    compDiv.className = 'card-white p-3'
+    compDiv.innerHTML = '<div class="font-bold mb-2">🏢 保有会社</div>'
     cp.companies.forEach(cid=>{
       const comp = G.companies.find(x=>x.id===cid)
       if(!comp) return
-      html += \`
-      <div class="flex justify-between items-center py-1 border-b border-gray-100">
-        <div>\${comp.emoji} \${comp.name}</div>
-        <button class="btn btn-danger btn-sm" onclick="doSellCompany('\${cid}')">売却</button>
-      </div>\`
-      // Show upgrade button
-      if(comp.upgradeTo){
-        html += \`
-        <div class="flex justify-between items-center py-1">
-          <div class="text-xs text-gray-500">⬆️ アップグレード可能(\${fmt(comp.upgradeCost)})</div>
-          <button class="btn btn-warning btn-sm" onclick="doUpgradeCompany('\${cid}')">UP!</button>
+      const row = document.createElement('div')
+      row.className = 'flex justify-between items-center py-1 border-b border-gray-100 gap-2 flex-wrap'
+      row.innerHTML = \`
+        <div class="text-sm flex-1">\${comp.emoji} <span class="font-bold">\${comp.name}</span>
+          <span class="text-xs ml-1" style="color:#4CAF50;">売値: \${fmt(comp.cost)}（全額）</span>
         </div>\`
+      const sellBtn = document.createElement('button')
+      sellBtn.className = 'btn btn-danger btn-sm'
+      sellBtn.innerHTML = '💸 売却'
+      sellBtn.addEventListener('click', ()=> doSellCompany(cid))
+      row.appendChild(sellBtn)
+      compDiv.appendChild(row)
+      if(comp.upgradeTo){
+        const upRow = document.createElement('div')
+        upRow.className = 'flex justify-between items-center py-1 gap-2'
+        upRow.innerHTML = \`<div class="text-xs text-gray-500">⬆️ UP可能 \${fmt(comp.upgradeCost)}</div>\`
+        const upBtn = document.createElement('button')
+        upBtn.className = 'btn btn-warning btn-sm'
+        upBtn.textContent = '⬆️ UP!'
+        upBtn.addEventListener('click', ()=> doUpgradeCompany(cid))
+        upRow.appendChild(upBtn)
+        compDiv.appendChild(upRow)
       }
     })
-    html += \`</div>\`
+    wrap.appendChild(compDiv)
   }
 
-  // Loans given
+  // 融資中
   if(cp.loans && cp.loans.length > 0){
-    html += \`<div class="card-white p-3"><div class="font-bold mb-2">🏦 融資中</div>\`
+    let lh = \`<div class="card-white p-3"><div class="font-bold mb-2">🏦 融資中</div>\`
     cp.loans.forEach(l=>{
-      html += \`<div class="flex justify-between py-1 border-b border-gray-100">
+      lh += \`<div class="flex justify-between py-1 border-b border-gray-100">
         <div>\${G.players[l.toPlayerId].name}へ \${fmt(l.amount)}</div>
         <div class="text-xs text-gray-500">年利\${fmt(l.yearlyInterest)}</div>
       </div>\`
     })
-    html += \`</div>\`
+    lh += '</div>'
+    wrap.innerHTML += lh
   }
 
-  // Debts
+  // 借金
   if(cp.debts && cp.debts.length > 0){
-    html += \`<div class="card-white p-3" style="border:2px solid #f44336;"><div class="font-bold mb-2 text-red-600">⚠️ 借金</div>\`
+    let dh = \`<div class="card-white p-3" style="border:2px solid #f44336;"><div class="font-bold mb-2 text-red-600">⚠️ 借金</div>\`
     cp.debts.forEach(d=>{
-      html += \`<div class="flex justify-between py-1 border-b border-gray-100">
+      dh += \`<div class="flex justify-between py-1 border-b border-gray-100">
         <div>\${G.players[d.fromPlayerId].name}から \${fmt(d.amount)}</div>
         <div class="text-xs text-gray-500">年利\${fmt(d.yearlyInterest)}</div>
       </div>\`
     })
-    html += \`</div>\`
+    dh += '</div>'
+    wrap.innerHTML += dh
   }
 
-  html += \`<div class="card-white p-3 flex justify-between items-center">
+  // 勝利資産
+  wrap.innerHTML += \`<div class="card-white p-3 flex justify-between items-center">
     <div class="font-bold">💰 勝利資産合計</div>
     <div class="text-xl font-black" style="color:var(--c3);">\${fmt(cp.totalAssets)}</div>
   </div>\`
-  html += \`</div>\`
-  el.innerHTML = html
+
+  el.appendChild(wrap)
 }
 
 function calcInterestDisplay(atm){
@@ -1007,17 +1023,19 @@ async function doUpgradeCompany(companyId){
 // Company sell
 async function doSellCompany(companyId){
   const comp = G.companies.find(c=>c.id===companyId)
-  const sellPrice = Math.floor(comp.cost*0.5)
+  const sellPrice = comp.cost
   showConfirm(
-    comp.emoji+' '+comp.name+'を売る？',
-    \`売値: <span class="font-black">\${fmt(sellPrice)}</span>（購入額の半額）\`,
+    comp.emoji+' '+comp.name+'を売却する？',
+    \`<div class="text-2xl font-black" style="color:#4CAF50;">+\${fmt(sellPrice)}</div>
+    <div class="text-sm mt-1 text-gray-600">購入額の全額が手元に戻ります</div>\`,
     async ()=>{
       const data = await apiPost('/action/sell-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
       G = data.state
       renderGame()
-      showToast('💸 売却！','info')
+      spawnCoins(4)
+      showToast('💸 '+comp.name+'を売却！'+fmt(sellPrice)+'回収','info')
     }
   )
 }
