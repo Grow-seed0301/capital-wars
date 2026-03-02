@@ -135,7 +135,7 @@ gameRouter.post('/start', async (c) => {
     loans: [] as { toPlayerId: number, amount: number, yearlyInterest: number }[], // 貸付（金融機関持ちのみ）
     debts: [] as { fromPlayerId: number, amount: number, yearlyInterest: number }[], // 借入
     totalAssets: 600,
-    actionUsed: 0,       // 今ターンに使った行動数（0 or 1、特殊で2まで）
+    actionUsed: 0,       // 購入フェーズ完了フラグ（0=購入可、1=完了）
     extraAction: false,  // バス/鉄道で追加行動付与済み
     extraTurn: false,    // 鉄道で再ターン付与済み
     skipTurn: false,
@@ -160,7 +160,9 @@ gameRouter.post('/start', async (c) => {
     handoffTo: null as number | null,
     // 融資関係
     pendingBankAction: null as any,
-    // サイコロ待ちフラグ: 会社/株購入後、サイコロを振るまで他アクション不可
+    // サイコロ待ちキュー: 購入完了後に保有会社・株を順番にロールする
+    pendingRolls: [] as { type: 'company' | 'stock', id: string }[],
+    // 後方互換 (フロントで参照されないよう null に固定)
     pendingRoll: null as null | { type: 'company' | 'stock', id: string },
     // メディア効果の対象選択
     pendingShrineBonus: null as null | { amount: number, ownerId: number },
@@ -206,14 +208,16 @@ gameRouter.post('/action/work', async (c) => {
   const { state } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  if (ns.pendingRoll) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
-  if (!canAct(p)) return c.json({ success: false, error: 'これ以上行動できません' })
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
+  if (!canAct(p)) return c.json({ success: false, error: 'アクション済みです。会社・株を購入か購入完了ボタンを押してください' })
 
   let earn = 100
   if (ns.activeEventTypes.includes('work_x3')) earn = 300
 
   p.cash += earn
   p.actionUsed++
+  // 働いた場合はpendingRollsを空にして即ロールフェーズへ
+  ns.pendingRolls = buildPendingRolls(p)
   recalcAssets(p, ns)
   ns.log = [`💼 ${p.name}が働いて${earn}円もらった！`, ...ns.log.slice(0,29)]
 
@@ -227,13 +231,14 @@ gameRouter.post('/action/deposit', async (c) => {
   const { state, amount } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  if (ns.pendingRoll) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
-  if (!canAct(p)) return c.json({ success: false, error: 'これ以上行動できません' })
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
+  if (!canAct(p)) return c.json({ success: false, error: 'アクション済みです' })
   if (amount <= 0 || p.cash < amount) return c.json({ success: false, error: '現金が足りません' })
 
   p.cash -= amount
   p.atm  += amount
   p.actionUsed++
+  ns.pendingRolls = buildPendingRolls(p)
   recalcAssets(p, ns)
   ns.log = [`🏧 ${p.name}がATMに${amount}円を預けた（残高: ${p.atm}円）`, ...ns.log.slice(0,29)]
 
@@ -247,13 +252,14 @@ gameRouter.post('/action/withdraw', async (c) => {
   const { state, amount } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  if (ns.pendingRoll) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
-  if (!canAct(p)) return c.json({ success: false, error: 'これ以上行動できません' })
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
+  if (!canAct(p)) return c.json({ success: false, error: 'アクション済みです' })
   if (amount <= 0 || p.atm < amount) return c.json({ success: false, error: 'ATM残高が足りません' })
 
   p.atm  -= amount
   p.cash += amount
   p.actionUsed++
+  ns.pendingRolls = buildPendingRolls(p)
   recalcAssets(p, ns)
   ns.log = [`🏧 ${p.name}がATMから${amount}円を引き出した`, ...ns.log.slice(0,29)]
 
@@ -268,10 +274,10 @@ gameRouter.post('/action/buy-company', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
 
-  // サイコロ待ち中は購入不可
-  if (ns.pendingRoll) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
-  // 1ターン1回制限
-  if (!canAct(p)) return c.json({ success: false, error: 'すでにアクションを使いました' })
+  // ロールフェーズ中は購入不可
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
+  // 購入フェーズ（actionUsed=0）のみ購入可
+  if (!canBuy(p, ns)) return c.json({ success: false, error: '購入フェーズが終わっています' })
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp) return c.json({ success: false, error: '会社が見つかりません' })
@@ -280,18 +286,9 @@ gameRouter.post('/action/buy-company', async (c) => {
 
   p.cash -= comp.cost
   p.companies.push(companyId)
-  p.actionUsed++  // 会社購入でアクション消費
+  // actionUsed は増加しない（購入は何回でも可）
   recalcAssets(p, ns)
-
-  // サイコロが必要な会社ならpendingRollをstateにセット
-  const hasRoll = comp.rolls.length > 0 && comp.id !== 'bank'
-  if (hasRoll) {
-    ns.pendingRoll = { type: 'company', id: companyId }
-    ns.log = [`🏢 ${p.name}が「${comp.emoji}${comp.name}」を${comp.cost}円で購入！次はサイコロを振ってね！`, ...ns.log.slice(0,29)]
-  } else {
-    ns.pendingRoll = null
-    ns.log = [`🏢 ${p.name}が「${comp.emoji}${comp.name}」を${comp.cost}円で購入！`, ...ns.log.slice(0,29)]
-  }
+  ns.log = [`🏢 ${p.name}が「${comp.emoji}${comp.name}」を${comp.cost}円で購入！`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns })
 })
@@ -303,7 +300,8 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   const { state, companyId } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  if (!canAct(p)) return c.json({ success: false, error: 'これ以上行動できません' })
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
+  if (!canBuy(p, ns)) return c.json({ success: false, error: '購入フェーズが終わっています' })
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp || !comp.upgradeTo) return c.json({ success: false, error: 'アップグレード不可' })
@@ -314,7 +312,7 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   p.cash -= comp.upgradeCost
   p.companies = p.companies.filter((id: string) => id !== companyId)
   p.companies.push(comp.upgradeTo)
-  p.actionUsed++
+  // アップグレードは購入フェーズ中に行うのでactionUsedは増加しない
   recalcAssets(p, ns)
   const newComp = COMPANIES.find(c => c.id === comp.upgradeTo)
   ns.log = [`⬆️ ${p.name}が「${comp.emoji}${comp.name}」を「${newComp?.emoji}${newComp?.name}」にアップグレード！`, ...ns.log.slice(0,29)]
@@ -344,13 +342,12 @@ gameRouter.post('/action/sell-company', async (c) => {
 })
 
 // ============================================================
-// アクション：サイコロを振って会社収益を得る
+// アクション：サイコロを振って会社収益を得る（pendingRolls キューから先頭を処理）
 // ============================================================
 gameRouter.post('/action/company-roll', async (c) => {
   const { state, companyId, dice } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  // buy-companyでactionUsed済みなので、ここでは所有チェックのみ
   if (!p.companies.includes(companyId)) return c.json({ success: false, error: '所有していません' })
 
   const { effect, label, bonus } = calcCompanyRoll(companyId, dice, ns.activeEventTypes)
@@ -377,7 +374,8 @@ gameRouter.post('/action/company-roll', async (c) => {
     }
   }
 
-  // サイコロ完了でpendingRollをクリア（actionUsedはbuy-companyで消費済み）
+  // pendingRolls から処理済みを除去
+  ns.pendingRolls = (ns.pendingRolls || []).filter((r: any) => !(r.type === 'company' && r.id === companyId))
   ns.pendingRoll = null
   recalcAssets(p, ns)
   const bankrupted = checkBankruptAfterAction(ns)
@@ -393,10 +391,10 @@ gameRouter.post('/action/buy-stock', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
 
-  // サイコロ待ち中は購入不可
-  if (ns.pendingRoll) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
-  // 1ターン1回制限
-  if (!canAct(p)) return c.json({ success: false, error: 'すでにアクションを使いました' })
+  // ロールフェーズ中は購入不可
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return c.json({ success: false, error: 'サイコロを振ってからにしてください' })
+  // 購入フェーズのみ購入可
+  if (!canBuy(p, ns)) return c.json({ success: false, error: '購入フェーズが終わっています' })
 
   const st = STOCKS.find(s => s.id === stockId)
   if (!st) return c.json({ success: false, error: '株が見つかりません' })
@@ -415,11 +413,9 @@ gameRouter.post('/action/buy-stock', async (c) => {
   } else {
     p.stocks.push({ id: stockId, qty: qty || 1, buyPrice: st.buyPrice })
   }
-  p.actionUsed++
-  // 株購入後はサイコロ待ち
-  ns.pendingRoll = { type: 'stock', id: stockId }
+  // actionUsed は増加しない（購入フェーズのまま）
   recalcAssets(p, ns)
-  ns.log = [`📈 ${p.name}が${st.emoji}${st.name}を${qty||1}株 ${price}円で購入！次はサイコロを振ってね！`, ...ns.log.slice(0,29)]
+  ns.log = [`📈 ${p.name}が${st.emoji}${st.name}を${qty||1}株 ${price}円で購入！`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns })
 })
@@ -431,7 +427,6 @@ gameRouter.post('/action/stock-roll', async (c) => {
   const { state, stockId, dice } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  // buy-stockでactionUsed済みなので、ここでは所有チェックのみ
   const st = STOCKS.find(s => s.id === stockId)
   if (!st) return c.json({ success: false, error: '株が見つかりません' })
   const holding = p.stocks.find((s: any) => s.id === stockId)
@@ -444,13 +439,38 @@ gameRouter.post('/action/stock-roll', async (c) => {
   if (ns.activeEventTypes.includes('stock_half'))  effect = Math.floor(effect / 2)
 
   p.cash = p.cash + effect  // マイナスもそのまま反映（破産判定のため）
-  // サイコロ完了でpendingRollをクリア（actionUsedはbuy-stockで消費済み）
+  // pendingRolls から処理済みを除去
+  ns.pendingRolls = (ns.pendingRolls || []).filter((r: any) => !(r.type === 'stock' && r.id === stockId))
   ns.pendingRoll = null
   recalcAssets(p, ns)
   const bankrupted = checkBankruptAfterAction(ns)
   ns.log = [`🎲 ${p.name}の${st.emoji}${st.name}: サイコロ${dice} → ${roll.label}（${effect > 0 ? '+' : ''}${effect}円）`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns, effect, label: roll.label, bankrupted: bankrupted ? bankrupted.id : null })
+})
+
+// ============================================================
+// アクション：購入完了 → ロールフェーズへ移行
+// ============================================================
+gameRouter.post('/action/finish-purchase', async (c) => {
+  const { state } = await c.req.json()
+  const ns = deepCopy(state)
+  const p = ns.players[ns.currentPlayer]
+  if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+
+  // actionUsed=1 にしてロールフェーズへ
+  p.actionUsed = 1
+  // 現在の保有会社・株（サイコロありのもの）をキューに積む
+  ns.pendingRolls = buildPendingRolls(p)
+  ns.pendingRoll = null
+
+  if (ns.pendingRolls.length > 0) {
+    ns.log = [`🎲 ${p.name}の購入完了！保有している会社・株のサイコロを振ってください`, ...ns.log.slice(0,29)]
+  } else {
+    ns.log = [`✅ ${p.name}の購入完了！（サイコロなし）ターンを終了してください`, ...ns.log.slice(0,29)]
+  }
+
+  return c.json({ success: true, state: ns })
 })
 
 // ============================================================
@@ -538,7 +558,8 @@ gameRouter.post('/end-turn', async (c) => {
   const cp = ns.players[ns.currentPlayer]
   cp.actionUsed  = 0
   cp.extraAction = false
-  ns.pendingRoll = null  // 破産でターン終了した場合もpendingRollをクリア
+  ns.pendingRolls = []   // ロールキューをクリア
+  ns.pendingRoll = null  // 後方互換
 
   // 破産者は再ターンなし
   if (!cp.bankrupt) {
@@ -715,10 +736,34 @@ function processYearEnd(ns: any): any {
 // ============================================================
 // ユーティリティ
 // ============================================================
+// 購入フェーズ中かどうか（actionUsed=0 なら購入フェーズ）
 function canAct(p: any): boolean {
-  if (p.bankrupt) return false  // 破産プレイヤーは行動不可
-  const maxActions = p.extraAction ? 2 : 1
-  return p.actionUsed < maxActions
+  if (p.bankrupt) return false
+  return p.actionUsed === 0   // 購入完了前のみ行動可
+}
+
+// 購入フェーズ中かつサイコロ待ちが空か（購入可能判定）
+function canBuy(p: any, ns: any): boolean {
+  if (p.bankrupt) return false
+  if (ns.pendingRolls && ns.pendingRolls.length > 0) return false
+  return p.actionUsed === 0
+}
+
+// 保有会社・株からサイコロキューを生成（サイコロのある会社・株のみ）
+function buildPendingRolls(p: any): { type: 'company' | 'stock', id: string }[] {
+  const rolls: { type: 'company' | 'stock', id: string }[] = []
+  for (const cid of (p.companies || [])) {
+    const comp = COMPANIES.find(c => c.id === cid)
+    if (comp && comp.rolls.length > 0 && comp.id !== 'bank') {
+      rolls.push({ type: 'company', id: cid })
+    }
+  }
+  for (const s of (p.stocks || [])) {
+    if (s.qty > 0) {
+      rolls.push({ type: 'stock', id: s.id })
+    }
+  }
+  return rolls
 }
 
 // ③ Fisher-Yates シャッフル
