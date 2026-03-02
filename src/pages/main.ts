@@ -84,8 +84,8 @@ body{
 .event-card-big{width:260px;border-radius:24px;padding:30px 20px;text-align:center;background:linear-gradient(135deg,#1a1a2e,#16213e);border:3px solid var(--c3);box-shadow:0 0 40px rgba(255,215,0,.4);}
 
 /* ===== Shrine target modal ===== */
-#shrine-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:7500;}
-#shrine-overlay.show{display:flex;}
+#media-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:7500;}
+#media-overlay.show{display:flex;}
 
 /* ===== Result screen ===== */
 .rank-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;margin-bottom:8px;}
@@ -379,10 +379,10 @@ body{
 <!-- ================================================================
   SHRINE TARGET OVERLAY
 ================================================================ -->
-<div id="shrine-overlay">
+<div id="media-overlay">
   <div class="card p-6 max-w-sm w-full text-center">
-    <div class="text-5xl mb-3">⛩️</div>
-    <h3 class="text-xl font-black mb-2">お金をもらう相手を選ぼう！</h3>
+    <div class="text-5xl mb-3">📺</div>
+    <h3 class="text-xl font-black mb-2">広告費をもらう相手を選ぼう！</h3>
     <p class="text-sm opacity-70 mb-1" id="shrineAmountLabel"></p>
     <div id="shrine-targets" class="space-y-2 mb-4"></div>
   </div>
@@ -1156,7 +1156,7 @@ function showShrineTargets(){
     <button class="btn btn-warning w-full" onclick="doShrineCollect(\${p.id})">
       \${PLAYER_EMOJIS[p.id]} \${p.name}（手持: \${fmt(p.cash)}）
     </button>\`).join('')
-  document.getElementById('shrine-overlay').classList.add('show')
+  document.getElementById('media-overlay').classList.add('show')
   document.getElementById('dice-panel').classList.add('hidden')
 }
 
@@ -1165,7 +1165,7 @@ async function doShrineCollect(targetPlayerId){
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
   G = data.state
-  document.getElementById('shrine-overlay').classList.remove('show')
+  document.getElementById('media-overlay').classList.remove('show')
   renderGame()
   spawnCoins(5)
 }
@@ -1486,7 +1486,7 @@ const TUTORIALS = [
   {title:'🎮 ゲームの目的',content:'ATM残高＋保有株価額＋手持ち現金が一番多い人の勝ち！<br>会社の価値は勝利条件には含まれないよ。'},
   {title:'📅 1年の流れ',content:'① ATM残高の多い人から順番に行動。<br>② 2年目以降は1位の人がイベントカードを引く。<br>③ 1年に1回だけ行動できる（特別カードで2回可）。'},
   {title:'🎯 できること',content:'<b>① はたらく</b>: 100円もらえる。<br><b>② ATM</b>: お金を預ける・引き出す。利息がつくよ！<br><b>③ 会社を買う</b>: 購入後にサイコロを振って収益ゲット。<br><b>④ 株を買う</b>: サイコロの偶奇で増減。'},
-  {title:'🏢 会社について',content:'飲食店・バス会社・神社・金融機関の4種類。<br>購入したらサイコロを振れる！<br>アップグレードすると効果がパワーアップ。<br>会社は売れるけど資産には含まれないよ。'},
+  {title:'🏢 会社について',content:'飲食店・バス会社・メディア・金融機関の4種類。<br>購入したらサイコロを振れる！<br>アップグレードすると効果がパワーアップ。<br>会社は売れるけど点数には含まれないよ。'},
   {title:'📈 株について',content:'日本株(500円/株)・外国株(1000円/株)の2種類。<br>サイコロ偶数 → 大きく増える！<br>サイコロ奇数 → 損してしまう…。<br>リスクとリターンを考えて投資しよう！'},
   {title:'🏧 ATMと利息',content:'ATMにお金を預けると年末に利息がもらえる！<br>200〜1500円 → +100円/年<br>1500〜2600円 → +200円/年<br>2600〜3500円 → +300円/年<br>3500円以上 → +600円/年'},
   {title:'🎴 イベントカード',content:'2年目以降、1位のプレイヤーが毎年引く。<br>インフレ・倒産・株高騰など10種類！<br>良いカードも悪いカードもあるよ。'},

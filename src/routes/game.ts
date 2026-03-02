@@ -50,12 +50,12 @@ export const COMPANIES = [
     upgradeCost: null, upgradeTo: null,
   },
   {
-    id: 'shrine', name: '神社', emoji: '⛩️', cost: 2500,
-    desc: '他プレイヤーからお金をもらえる',
+    id: 'media', name: 'メディア', emoji: '📺', cost: 2500,
+    desc: '注目度でお金が集まる！他プレイヤーから広告費をもらえる',
     rolls: [
-      { range: [1,2], effect: 0,     label: '好きな人から2500円もらえる', bonus: 'take_2500' },
-      { range: [3,4], effect: 0,     label: '好きな人から1250円もらえる', bonus: 'take_1250' },
-      { range: [5,6], effect: 0,     label: '何も起こらない' },
+      { range: [1,2], effect: 0,     label: '好きな人から2500円の広告費！', bonus: 'take_2500' },
+      { range: [3,4], effect: 0,     label: '好きな人から1250円の広告費！', bonus: 'take_1250' },
+      { range: [5,6], effect: 0,     label: '視聴率低迷…何も起こらない' },
     ],
     upgradeCost: null, upgradeTo: null,
   },
@@ -160,7 +160,7 @@ gameRouter.post('/start', async (c) => {
     handoffTo: null as number | null,
     // 融資関係
     pendingBankAction: null as any,
-    // 神社効果の対象選択
+    // メディア効果の対象選択
     pendingShrineBonus: null as null | { amount: number, ownerId: number },
     // チャリティ（投資家イベント）
     charityProcessed: false,
@@ -475,12 +475,12 @@ gameRouter.post('/action/repay', async (c) => {
 })
 
 // ============================================================
-// 神社：対象プレイヤーから徴収
+// メディア：対象プレイヤーから広告費を徴収
 // ============================================================
 gameRouter.post('/action/shrine-collect', async (c) => {
   const { state, targetPlayerId } = await c.req.json()
   const ns = deepCopy(state)
-  if (!ns.pendingShrineBonus) return c.json({ success: false, error: '神社効果がありません' })
+  if (!ns.pendingShrineBonus) return c.json({ success: false, error: 'メディア効果がありません' })
 
   const { amount, ownerId } = ns.pendingShrineBonus
   const owner  = ns.players[ownerId]
@@ -493,7 +493,7 @@ gameRouter.post('/action/shrine-collect', async (c) => {
 
   recalcAssets(owner, ns)
   recalcAssets(target, ns)
-  ns.log = [`⛩️ ${owner.name}が${target.name}から${actual}円を受け取った！`, ...ns.log.slice(0,29)]
+  ns.log = [`📺 ${owner.name}が${target.name}から広告費${actual}円を受け取った！`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns })
 })
