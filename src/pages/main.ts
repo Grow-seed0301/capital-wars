@@ -590,6 +590,34 @@ function renderGame(){
   document.getElementById('turnOrderLabel').textContent =
     '順番: '+G.turnOrder.map(id=>G.players[id].name).join(' → ')
 
+  // ── 破産警告バナー（自分のターンで手持ち現金がマイナス or 500円以下） ──
+  const warningBanner = document.getElementById('bankruptcy-warning') || (() => {
+    const el = document.createElement('div')
+    el.id = 'bankruptcy-warning'
+    el.className = 'hidden'
+    const gameArea = document.getElementById('game-screen')
+    gameArea?.insertBefore(el, gameArea.firstChild)
+    return el
+  })()
+
+  if(cp.bankrupt){
+    warningBanner.className = 'mb-2 p-3 rounded-xl text-center font-bold text-white'
+    warningBanner.style.background = 'rgba(200,0,0,0.85)'
+    warningBanner.innerHTML = '💀 破産しました。ゲームオーバーです。ターン終了を押して観戦してください。'
+  } else if(cp.cash < 0){
+    warningBanner.className = 'mb-2 p-3 rounded-xl text-center font-bold'
+    warningBanner.style.background = 'rgba(220,50,50,0.8)'
+    warningBanner.innerHTML = \`⚠️ 手持ち現金がマイナス！ <span class="text-2xl">\${fmt(cp.cash)}</span>　このまま行動できません。会社を売却してプラスに戻してください！\`
+  } else if(cp.cash <= 500 && !cp.isAI){
+    warningBanner.className = 'mb-2 p-2 rounded-xl text-center text-sm font-bold'
+    warningBanner.style.background = 'rgba(255,160,0,0.7)'
+    warningBanner.innerHTML = \`🚨 手持ち現金が少なくなっています: <span class="font-black">\${fmt(cp.cash)}</span>　マイナスになると破産！\`
+  } else {
+    warningBanner.className = 'hidden'
+    warningBanner.style.background = ''
+    warningBanner.innerHTML = ''
+  }
+
   // Active event badge
   const evBadge = document.getElementById('activeEventBadge')
   if(G.activeEventTypes.length>0 || G.diceFixed){
@@ -616,8 +644,11 @@ function renderGame(){
   document.getElementById('cpName').textContent  = cp.name + (cp.isAI?' (AI)':'')
   const maxAct = cp.extraAction ? 2 : 1
   document.getElementById('cpStatus').textContent =
+    cp.bankrupt ? '💀 破産' :
     'アクション: '+cp.actionUsed+'/'+maxAct+(cp.extraTurn?' ⚠️再ターンあり':'')
-  document.getElementById('cpCash').textContent = fmt(cp.cash)
+  const cashEl = document.getElementById('cpCash')
+  cashEl.textContent = fmt(cp.cash)
+  cashEl.style.color = cp.cash < 0 ? '#f44336' : cp.cash <= 500 ? '#FF9800' : 'var(--c3)'
 
   renderActions()
   renderPortfolio()
@@ -634,15 +665,17 @@ function renderPlayersOverview(){
 
   el.innerHTML = G.players.map(p=>{
     const isCurrent = p.id === G.currentPlayer
+    const cashColor = p.bankrupt ? '#f44336' : p.cash < 0 ? '#f44336' : p.cash <= 500 ? '#FF9800' : ''
+    const panelStyle = p.bankrupt ? 'background:rgba(200,0,0,0.2);opacity:0.65;' : 'background:rgba(255,255,255,0.08);'
     return \`
-    <div class="player-panel \${isCurrent?'current':''}" style="background:rgba(255,255,255,0.08);">
+    <div class="player-panel \${isCurrent?'current':''}" style="\${panelStyle}">
       <div class="flex items-center gap-1 mb-1">
-        <span>\${PLAYER_EMOJIS[p.id]}</span>
-        <span class="font-bold text-sm truncate">\${p.name}\${p.isAI?' 🤖':''}</span>
+        <span>\${p.bankrupt ? '💀' : PLAYER_EMOJIS[p.id]}</span>
+        <span class="font-bold text-sm truncate">\${p.name}\${p.isAI?' 🤖':''}\${p.bankrupt?' 破産':''}</span>
         \${isCurrent?'<span class="ml-auto text-xs" style="color:var(--c3);">▶ 今</span>':''}
       </div>
       <div class="text-xs space-y-0.5">
-        <div>💵 手持: <span class="font-bold">\${fmt(p.cash)}</span></div>
+        <div>💵 手持: <span class="font-bold" \${cashColor?'style="color:'+cashColor+';"':''}>\${fmt(p.cash)}</span></div>
         <div>🏧 ATM: <span class="font-bold">\${fmt(p.atm)}</span></div>
         <div>📊 総資産: <span class="font-bold" style="color:var(--c3);">\${fmt(p.totalAssets)}</span></div>
       </div>
@@ -666,6 +699,22 @@ function renderActions(){
       <div class="font-bold">\${cp.name}のターン（AI）</div>
     </div>\`
     document.getElementById('endTurnBtn').disabled = true
+    document.getElementById('atm-panel').classList.add('hidden')
+    document.getElementById('dice-panel').classList.add('hidden')
+    document.getElementById('lend-panel').classList.add('hidden')
+    document.getElementById('repay-panel').classList.add('hidden')
+    return
+  }
+
+  // 破産済みプレイヤー
+  if(cp.bankrupt){
+    el.innerHTML = \`
+      <div class="col-span-2 text-center py-4 rounded-xl" style="background:rgba(200,0,0,0.2);border:2px solid #f44336;">
+        <div class="text-4xl mb-2">💀</div>
+        <div class="font-bold text-red-400 text-lg">破産しました</div>
+        <div class="text-xs mt-1 opacity-70">ターン終了ボタンを押してください</div>
+      </div>\`
+    document.getElementById('endTurnBtn').disabled = false
     document.getElementById('atm-panel').classList.add('hidden')
     document.getElementById('dice-panel').classList.add('hidden')
     document.getElementById('lend-panel').classList.add('hidden')
@@ -1048,19 +1097,45 @@ function renderMarket(){
 
 function renderRanking(){
   const el = document.getElementById('ranking-content')
-  const sorted = [...G.players].sort((a,b)=>b.totalAssets-a.totalAssets)
-  el.innerHTML = sorted.map((p,i)=>\`
-    <div class="rank-row rank-\${i<3?i+1:'other'} \${p.id===G.currentPlayer?'ring-2 ring-yellow-300':''}">
-      <div class="text-2xl font-black">\${['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'][i]||i+1+'.'}</div>
+  // 生存者を資産順、破産者を末尾に
+  const alive = [...G.players].filter(p=>!p.bankrupt).sort((a,b)=>b.totalAssets-a.totalAssets)
+  const bankrupt = [...G.players].filter(p=>p.bankrupt)
+  const sorted = [...alive, ...bankrupt]
+  el.innerHTML = sorted.map((p,i)=>{
+    const isBankrupt = !!p.bankrupt
+    const rankIcon = isBankrupt ? '💀' : (['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'][i]||i+1+'.')
+    const cashColor = p.cash < 0 ? 'color:#f44336;' : p.cash <= 500 ? 'color:#FF9800;' : ''
+    return \`
+    <div class="rank-row \${isBankrupt?'opacity-50':'rank-'+(i<3?i+1:'other')} \${p.id===G.currentPlayer?'ring-2 ring-yellow-300':''}" \${isBankrupt?'style="background:rgba(200,0,0,0.15);"':''}>
+      <div class="text-2xl font-black">\${rankIcon}</div>
       <div class="flex-1">
-        <div class="font-bold">\${PLAYER_EMOJIS[p.id]} \${p.name}</div>
-        <div class="text-sm">手持:\${fmt(p.cash)} ATM:\${fmt(p.atm)}</div>
+        <div class="font-bold">\${isBankrupt?'💀':PLAYER_EMOJIS[p.id]} \${p.name}\${isBankrupt?' <span class="text-red-400 text-xs">破産</span>':''}</div>
+        <div class="text-sm" style="\${cashColor}">手持:\${fmt(p.cash)} ATM:\${fmt(p.atm)}</div>
       </div>
       <div class="text-right">
-        <div class="font-black text-lg">\${fmt(p.totalAssets)}</div>
+        <div class="font-black text-lg \${isBankrupt?'text-red-400':''}">\${fmt(p.totalAssets)}</div>
       </div>
     </div>
-  \`).join('')
+    \`
+  }).join('')
+}
+
+// 破産通知オーバーレイ
+function showBankruptNotice(playerName: string){
+  const overlay = document.createElement('div')
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);'
+  overlay.innerHTML = \`
+    <div style="background:linear-gradient(135deg,#1a0000,#3d0000);border:3px solid #f44336;border-radius:20px;padding:40px;text-align:center;max-width:320px;">
+      <div style="font-size:4rem;">💀</div>
+      <div style="font-size:1.5rem;font-weight:900;color:#f44336;margin:12px 0;">\${playerName}</div>
+      <div style="font-size:1.1rem;font-weight:bold;color:#fff;margin-bottom:8px;">破　産</div>
+      <div style="font-size:0.8rem;color:#aaa;margin-bottom:20px;">手持ち現金がマイナスになりました。<br>以降のターンに参加できません。</div>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:#f44336;color:#fff;border:none;border-radius:10px;padding:10px 30px;font-weight:bold;cursor:pointer;font-size:1rem;">OK</button>
+    </div>
+  \`
+  document.body.appendChild(overlay)
+  // 3秒後に自動消去
+  setTimeout(()=>{ overlay.remove() }, 4000)
 }
 
 function renderLog(){
@@ -1313,6 +1388,11 @@ async function rollDice(){
         if(res.effect>0) spawnCoins(6)
         await new Promise(r=>setTimeout(r,1500))
         document.getElementById('dice-panel').classList.add('hidden')
+        // 破産チェック
+        if(res.bankrupted !== null && res.bankrupted !== undefined){
+          const bp = G.players[res.bankrupted]
+          showBankruptNotice(bp.name)
+        }
         renderGame()
       }
 
@@ -1330,11 +1410,16 @@ async function rollDice(){
         return
       }
       G = res.state
-      const resultText = \`🎲 \${dice} → \${res.label}  \${res.effect?(res.effect>0?'▲+':'')+fmt(res.effect):''}\`
-      document.getElementById('diceResult').textContent = resultText
+      const resultText2 = \`🎲 \${dice} → \${res.label}  \${res.effect?(res.effect>0?'▲+':'')+fmt(res.effect):''}\`
+      document.getElementById('diceResult').textContent = resultText2
       if(res.effect>0) spawnCoins(6)
       await new Promise(r=>setTimeout(r,1500))
       document.getElementById('dice-panel').classList.add('hidden')
+      // 破産チェック
+      if(res.bankrupted !== null && res.bankrupted !== undefined){
+        const bp = G.players[res.bankrupted]
+        showBankruptNotice(bp.name)
+      }
       renderGame()
     }
   } finally {

@@ -180,6 +180,7 @@ gameRouter.post('/start', async (c) => {
 // ターン順を ATM 残高の多い順でソート（同値はIDで安定ソート）
 function buildTurnOrder(players: any[]): number[] {
   return [...players]
+    .filter(p => !p.bankrupt)  // 破産者はターン順から除外
     .sort((a, b) => b.atm !== a.atm ? b.atm - a.atm : a.id - b.id)
     .map(p => p.id)
 }
@@ -379,8 +380,9 @@ gameRouter.post('/action/company-roll', async (c) => {
   // サイコロ完了でpendingRollをクリア（actionUsedはbuy-companyで消費済み）
   ns.pendingRoll = null
   recalcAssets(p, ns)
+  const bankrupted = checkBankruptAfterAction(ns)
 
-  return c.json({ success: true, state: ns, effect, label, bonus: bonusResult })
+  return c.json({ success: true, state: ns, effect, label, bonus: bonusResult, bankrupted: bankrupted ? bankrupted.id : null })
 })
 
 // ============================================================
@@ -441,13 +443,14 @@ gameRouter.post('/action/stock-roll', async (c) => {
   if (ns.activeEventTypes.includes('stock_x2'))   effect = effect > 0 ? effect * 2 : Math.floor(effect * 2)
   if (ns.activeEventTypes.includes('stock_half'))  effect = Math.floor(effect / 2)
 
-  p.cash = Math.max(0, p.cash + effect)
+  p.cash = p.cash + effect  // マイナスもそのまま反映（破産判定のため）
   // サイコロ完了でpendingRollをクリア（actionUsedはbuy-stockで消費済み）
   ns.pendingRoll = null
   recalcAssets(p, ns)
+  const bankrupted = checkBankruptAfterAction(ns)
   ns.log = [`🎲 ${p.name}の${st.emoji}${st.name}: サイコロ${dice} → ${roll.label}（${effect > 0 ? '+' : ''}${effect}円）`, ...ns.log.slice(0,29)]
 
-  return c.json({ success: true, state: ns, effect, label: roll.label })
+  return c.json({ success: true, state: ns, effect, label: roll.label, bankrupted: bankrupted ? bankrupted.id : null })
 })
 
 // ============================================================
@@ -535,14 +538,20 @@ gameRouter.post('/end-turn', async (c) => {
   const cp = ns.players[ns.currentPlayer]
   cp.actionUsed  = 0
   cp.extraAction = false
+  ns.pendingRoll = null  // 破産でターン終了した場合もpendingRollをクリア
 
-  // 再ターン（鉄道会社）
-  if (cp.extraTurn) {
+  // 破産者は再ターンなし
+  if (!cp.bankrupt) {
+    // 再ターン（鉄道会社）
+    if (cp.extraTurn) {
+      cp.extraTurn = false
+      ns.log = [`🚄 ${cp.name}の鉄道会社効果で再ターン！`, ...ns.log.slice(0,29)]
+      ns.needsHandoff = !cp.isAI
+      ns.handoffTo    = cp.isAI ? null : ns.currentPlayer
+      return c.json({ success: true, state: ns })
+    }
+  } else {
     cp.extraTurn = false
-    ns.log = [`🚄 ${cp.name}の鉄道会社効果で再ターン！`, ...ns.log.slice(0,29)]
-    ns.needsHandoff = !cp.isAI
-    ns.handoffTo    = cp.isAI ? null : ns.currentPlayer
-    return c.json({ success: true, state: ns })
   }
 
   // 次プレイヤーへ
@@ -552,11 +561,17 @@ gameRouter.post('/end-turn', async (c) => {
     // 全員ターン終了 → 年末処理
     ns = processYearEnd(ns)
   } else {
-    ns.currentPlayer = ns.turnOrder[ns.currentTurnIdx]
-    const np = ns.players[ns.currentPlayer]
-    ns.log = [`🔄 ${np.name}のターンです`, ...ns.log.slice(0,29)]
-    ns.needsHandoff = !np.isAI
-    ns.handoffTo    = np.isAI ? null : ns.currentPlayer
+    const nextId = ns.turnOrder[ns.currentTurnIdx]
+    const np = ns.players[nextId]
+    if (!np) {
+      // turnOrder が壊れている場合は年末処理へ
+      ns = processYearEnd(ns)
+    } else {
+      ns.currentPlayer = nextId
+      ns.log = [`🔄 ${np.name}のターンです`, ...ns.log.slice(0,29)]
+      ns.needsHandoff = !np.isAI
+      ns.handoffTo    = np.isAI ? null : ns.currentPlayer
+    }
   }
 
   return c.json({ success: true, state: ns })
@@ -566,9 +581,10 @@ gameRouter.post('/end-turn', async (c) => {
 // 年末処理
 // ============================================================
 function processYearEnd(ns: any): any {
-  // ATM利息
+  // ATM利息（破産者除く）
   let interestMultiplier = ns.activeEventTypes.includes('interest_x2') ? 2 : 1
   for (const p of ns.players) {
+    if (p.bankrupt) continue
     const interest = calcInterest(p.atm) * interestMultiplier
     if (interest > 0) {
       p.atm += interest
@@ -578,6 +594,7 @@ function processYearEnd(ns: any): any {
 
   // 融資の利息処理
   for (const p of ns.players) {
+    if (p.bankrupt) continue
     for (const debt of p.debts) {
       const interest = debt.yearlyInterest
       if (p.cash >= interest) {
@@ -586,13 +603,20 @@ function processYearEnd(ns: any): any {
         debt.amount += 0
         ns.log = [`💳 ${p.name}が${ns.players[debt.fromPlayerId].name}に利息${interest}円支払い`, ...ns.log.slice(0,29)]
       } else {
-        debt.amount += interest
-        ns.log = [`⚠️ ${p.name}が利息${interest}円を払えず！借金に上乗せ`, ...ns.log.slice(0,29)]
+        // 払えない場合は現金を0にして差額は借金に上乗せ
+        const shortfall = interest - p.cash
+        p.cash = 0
+        debt.amount += shortfall
+        ns.log = [`⚠️ ${p.name}が利息${interest}円を払えず！${shortfall}円を借金に上乗せ`, ...ns.log.slice(0,29)]
       }
     }
   }
 
-  for (const p of ns.players) recalcAssets(p, ns)
+  for (const p of ns.players) {
+    recalcAssets(p, ns)
+    // 年末の収支でマイナスになった場合も破産チェック
+    checkBankrupt(p, ns)
+  }
 
   const nextYear = ns.year + 1
   ns.activeEventTypes = []
@@ -620,16 +644,30 @@ function processYearEnd(ns: any): any {
     for (const p of ns.players) recalcAssets(p, ns)
     ns.phase = 'result'
     ns.gameOver = true
-    const winner = [...ns.players].sort((a: any, b: any) => b.totalAssets - a.totalAssets)[0]
-    ns.log = [`🏆 ゲーム終了！優勝: ${winner.name}（総資産${winner.totalAssets}円）`, ...ns.log.slice(0,29)]
+    // 破産者を除いた中で最高資産のプレイヤーが優勝
+    const activePlayers = ns.players.filter((p: any) => !p.bankrupt)
+    const candidates = activePlayers.length > 0 ? activePlayers : ns.players
+    const winner = [...candidates].sort((a: any, b: any) => b.totalAssets - a.totalAssets)[0]
+    const bankruptCount = ns.players.filter((p: any) => p.bankrupt).length
+    const bankruptMsg = bankruptCount > 0 ? `（${bankruptCount}人破産）` : ''
+    ns.log = [`🏆 ゲーム終了！優勝: ${winner.name}（総資産${winner.totalAssets}円）${bankruptMsg}`, ...ns.log.slice(0,29)]
     return ns
   }
 
   // 次年度へ
   ns.year = nextYear
-  // ターン順を ATM 残高でソート
+  // ターン順を ATM 残高でソート（破産者除外）
   ns.turnOrder = buildTurnOrder(ns.players)
   ns.currentTurnIdx = 0
+
+  // 全員破産した場合はゲーム終了
+  if (ns.turnOrder.length === 0) {
+    ns.phase = 'result'
+    ns.gameOver = true
+    ns.log = [`💀 全員破産！ゲーム終了です。`, ...ns.log.slice(0,29)]
+    return ns
+  }
+
   ns.currentPlayer = ns.turnOrder[0]
   ns.phase = 'event'  // 2年目以降はイベントカードを引く
   if (ns.year === 1) ns.phase = 'action'
@@ -678,6 +716,7 @@ function processYearEnd(ns: any): any {
 // ユーティリティ
 // ============================================================
 function canAct(p: any): boolean {
+  if (p.bankrupt) return false  // 破産プレイヤーは行動不可
   const maxActions = p.extraAction ? 2 : 1
   return p.actionUsed < maxActions
 }
@@ -698,6 +737,23 @@ function recalcAssets(p: any, ns: any): void {
     if (st) stockVal += st.buyPrice * s.qty
   }
   p.totalAssets = p.cash + p.atm + stockVal
+}
+
+// 破産チェック: cash < 0 のプレイヤーを破産にし、そのプレイヤーを返す
+function checkBankrupt(p: any, ns: any): boolean {
+  if (p.cash < 0 && !p.bankrupt) {
+    p.bankrupt = true
+    p.eliminatedYear = ns.year
+    ns.log = [`💀 ${p.name}が破産！手持ち現金がマイナスになりました。`, ...ns.log.slice(0, 29)]
+    return true
+  }
+  return false
+}
+
+// アクション後の現プレイヤー破産チェック
+function checkBankruptAfterAction(ns: any): any | null {
+  const cp = ns.players[ns.currentPlayer]
+  return checkBankrupt(cp, ns) ? cp : null
 }
 
 function deepCopy<T>(obj: T): T {
