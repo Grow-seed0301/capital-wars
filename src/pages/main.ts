@@ -655,11 +655,11 @@ function renderActions(){
   const cp = G.players[G.currentPlayer]
   const maxAct = cp.extraAction ? 2 : 1
   const canAct = cp.actionUsed < maxAct && !cp.isAI
+  const pendingRoll = G.pendingRoll  // {type:'company'|'stock', id} or null
   const el = document.getElementById('action-buttons')
-
-  // ② innerHTML+onclick のエスケープ問題を回避：DOM生成＋addEventListener方式に変更
   el.innerHTML = ''
 
+  // AIターン
   if(cp.isAI){
     el.innerHTML = \`<div class="col-span-2 text-center py-4">
       <div class="text-3xl mb-2">🤖</div>
@@ -673,28 +673,92 @@ function renderActions(){
     return
   }
 
+  document.getElementById('endTurnBtn').disabled = false
+  document.getElementById('atm-panel').classList.add('hidden')
+  document.getElementById('lend-panel').classList.add('hidden')
+  document.getElementById('repay-panel').classList.add('hidden')
+
+  // ── サイコロ待ち状態 ──
+  if(pendingRoll){
+    document.getElementById('dice-panel').classList.remove('hidden')
+    if(pendingRoll.type === 'company'){
+      const comp = G.companies.find(c=>c.id===pendingRoll.id)
+      startCompanyRoll(pendingRoll.id)
+      el.innerHTML = \`
+        <div class="col-span-2 text-center py-3 rounded-xl" style="background:rgba(255,200,0,0.15);border:2px solid #FFD700;">
+          <div class="text-3xl mb-1">🎲</div>
+          <div class="font-bold text-yellow-300">\${comp?.emoji}\${comp?.name} のサイコロを振ってください！</div>
+          <div class="text-xs opacity-70 mt-1">サイコロを振るまで他のアクションはできません</div>
+        </div>\`
+    } else {
+      const st = G.stocks.find(s=>s.id===pendingRoll.id)
+      startStockRoll(pendingRoll.id)
+      el.innerHTML = \`
+        <div class="col-span-2 text-center py-3 rounded-xl" style="background:rgba(255,200,0,0.15);border:2px solid #FFD700;">
+          <div class="text-3xl mb-1">🎲</div>
+          <div class="font-bold text-yellow-300">\${st?.emoji}\${st?.name} の配当サイコロを振ってください！</div>
+          <div class="text-xs opacity-70 mt-1">サイコロを振るまで他のアクションはできません</div>
+        </div>\`
+    }
+    return
+  }
+
+  document.getElementById('dice-panel').classList.add('hidden')
+
+  // ── アクション済み状態 ──
+  if(!canAct){
+    el.innerHTML = \`
+      <div class="col-span-2 text-center py-3 rounded-xl" style="background:rgba(0,200,100,0.15);border:2px solid #4CAF50;">
+        <div class="text-3xl mb-1">✅</div>
+        <div class="font-bold text-green-300">アクション完了！</div>
+        <div class="text-xs opacity-70 mt-1">「ターンを終了する」を押してください</div>
+      </div>\`
+
+    // 売却ボタンはアクション済みでも表示
+    if(cp.companies.length > 0){
+      const sellSection = document.createElement('div')
+      sellSection.className = 'col-span-2 mt-2'
+      sellSection.innerHTML = \`<div class="text-xs font-bold mb-1 opacity-70">💸 会社売却（ターン中何回でも可）</div>\`
+      const sellGrid = document.createElement('div')
+      sellGrid.className = 'flex flex-wrap gap-2'
+      cp.companies.forEach(cid=>{
+        const comp = G.companies.find(x=>x.id===cid)
+        if(!comp) return
+        const btn = document.createElement('button')
+        btn.className = 'btn btn-danger btn-sm'
+        btn.innerHTML = \`\${comp.emoji} \${comp.name} 売却 (+\${fmt(comp.cost)})\`
+        btn.addEventListener('click', ()=> doSellCompany(cid))
+        sellGrid.appendChild(btn)
+      })
+      sellSection.appendChild(sellGrid)
+      el.appendChild(sellSection)
+    }
+    return
+  }
+
+  // ── 通常アクション選択 ──
   const actions = [
-    { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork,        enabled: canAct },
-    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',                                                fn: showATMPanel,  enabled: canAct },
+    { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork,           enabled: true },
+    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',                                                fn: showATMPanel,     enabled: true },
     { icon:'🏢', label:'会社を買う', sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: true },
     { icon:'📈', label:'株を買う',   sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: true },
   ]
-  if(cp.companies.includes('bank') && !cp.isAI)
+  if(cp.companies.includes('bank'))
     actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel, enabled: true })
   if(cp.debts && cp.debts.length > 0)
     actions.push({ icon:'💳', label:'返済する', sub:'借金: '+fmt(cp.debts.reduce((s,d)=>s+d.amount,0)), fn: showRepayPanel, enabled: true })
 
   actions.forEach(a=>{
     const div = document.createElement('div')
-    div.className = 'action-item' + (a.enabled?'':' disabled')
+    div.className = 'action-item'
     div.innerHTML = \`<div class="text-2xl mb-1">\${a.icon}</div>
       <div class="font-bold">\${a.label}</div>
       <div class="text-xs opacity-70">\${a.sub}</div>\`
-    if(a.enabled) div.addEventListener('click', a.fn)
+    div.addEventListener('click', a.fn)
     el.appendChild(div)
   })
 
-  // 保有会社の売却ボタン（回数制限なし・自分のターン中はいつでも可）
+  // 売却ボタン（ターン中いつでも可）
   if(cp.companies.length > 0){
     const sellSection = document.createElement('div')
     sellSection.className = 'col-span-2 mt-2'
@@ -713,12 +777,6 @@ function renderActions(){
     sellSection.appendChild(sellGrid)
     el.appendChild(sellSection)
   }
-
-  document.getElementById('endTurnBtn').disabled = false
-  document.getElementById('atm-panel').classList.add('hidden')
-  document.getElementById('dice-panel').classList.add('hidden')
-  document.getElementById('lend-panel').classList.add('hidden')
-  document.getElementById('repay-panel').classList.add('hidden')
 }
 
 function renderPortfolio(){
@@ -846,9 +904,20 @@ function calcInterestDisplay(atm){
 
 function renderMarket(){
   const cp = G.players[G.currentPlayer]
-  const canAct = cp.actionUsed < (cp.extraAction?2:1) && !cp.isAI
+  // pendingRoll中（サイコロ待ち）または actionUsed済みなら購入不可
+  const canAct = cp.actionUsed < (cp.extraAction?2:1) && !cp.isAI && !G.pendingRoll
   const el = document.getElementById('market-content')
   el.innerHTML = ''
+
+  // サイコロ待ち中はマーケット全体をロック表示
+  if(G.pendingRoll){
+    el.innerHTML = \`<div class="text-center py-6 opacity-60">
+      <div class="text-3xl mb-2">🎲</div>
+      <div class="font-bold">サイコロを振ってからマーケットを使えます</div>
+      <div class="text-xs mt-1">アクションタブに戻ってサイコロを振ってください</div>
+    </div>\`
+    return
+  }
 
   // ── 会社マーケット ──
   const compTitle = document.createElement('h3')
@@ -1064,25 +1133,24 @@ async function doWithdraw(){
 // Company buy
 async function doBuyCompany(companyId){
   const comp = G.companies.find(c=>c.id===companyId)
+  if(!comp){ showToast('会社データが見つかりません','error'); return }
   showConfirm(
     comp.emoji+' '+comp.name+'を買う？',
     \`<div class="text-2xl font-black" style="color:#f44336;">\${fmt(comp.cost)}</div>
     <div class="text-sm mt-1">\${comp.desc}</div>
-    \${comp.rolls&&comp.rolls.length>0?'<div class="text-xs mt-2" style="color:#6C63FF;">購入後すぐサイコロを振れます！</div>':''}\`,
+    \${comp.rolls&&comp.rolls.length>0?'<div class="text-xs mt-2" style="color:#FFD700;">購入後にサイコロを振ってください</div>':''}\`,
     async ()=>{
       const data = await apiPost('/action/buy-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
       G = data.state
       spawnCoins(5)
-      showToast('🏢 '+comp.name+'を購入！サイコロを振ろう！','info')
-      // サイコロが必要な会社なら即座にサイコロパネルを開く
-      if(data.pendingRoll){
-        renderGame()
+      showToast('🏢 '+comp.name+'を購入！','info')
+      // state.pendingRollがあればアクションタブに戻ってサイコロパネルを自動表示
+      renderGame()
+      if(G.pendingRoll){
         switchTab('actions')
-        startCompanyRoll(data.pendingRoll)
-      } else {
-        renderGame()
+        // renderGame()内のrenderActions()がpendingRollを検知してサイコロパネルを開く
       }
     }
   )
@@ -1136,18 +1204,20 @@ async function doBuyStock(stockId){
   if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
   showConfirm(
     st.emoji+' '+st.name+'を買う？',
-    \`1株 <span class="font-black">\${fmt(price)}</span><br>\${st.desc}\`,
+    \`1株 <span class="font-black">\${fmt(price)}</span><br>\${st.desc}
+    <div class="text-xs mt-2" style="color:#FFD700;">購入後にサイコロを振ってください</div>\`,
     async ()=>{
       const data = await apiPost('/action/buy-stock',{state:G, stockId, qty:1})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
       G = data.state
-      renderGame()
       spawnCoins(4)
-      showToast('📈 '+st.name+'を購入！サイコロを振ろう！','info')
-      // 購入後は株サイコロをすぐ振れるよう遷移
-      switchTab('actions')
-      startStockRoll(stockId)
+      showToast('📈 '+st.name+'を購入！','info')
+      // state.pendingRollがあればアクションタブに戻ってサイコロパネルを自動表示
+      renderGame()
+      if(G.pendingRoll){
+        switchTab('actions')
+      }
     }
   )
 }
