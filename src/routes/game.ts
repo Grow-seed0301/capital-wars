@@ -165,6 +165,7 @@ gameRouter.post('/start', async (c) => {
     // チャリティ（投資家イベント）
     charityProcessed: false,
     diceFixed: null as null | 'even' | 'odd',
+    eventDeck: shuffleArray([...EVENT_CARDS.map((_, i) => i)]) as number[],  // ③ シャッフルデッキ
   }
 
   // 初回ターン順をセット（全員ATM=0なのでそのまま）
@@ -610,7 +611,12 @@ function processYearEnd(ns: any): any {
 
   // イベントカードを引く（順番1位のプレイヤーが引く）
   if (ns.year > 1) {
-    const card = EVENT_CARDS[Math.floor(Math.random() * EVENT_CARDS.length)]
+    // ③ 均等乱数: シャッフル済みデッキ方式（なければ全カードをシャッフルして補充）
+    if (!ns.eventDeck || ns.eventDeck.length === 0) {
+      ns.eventDeck = shuffleArray([...EVENT_CARDS.map((_: any, i: number) => i)])
+    }
+    const cardIdx = ns.eventDeck.pop()
+    const card = EVENT_CARDS[cardIdx]
     ns.eventCard = card
     ns.log = [`🎴 ${ns.players[ns.turnOrder[0]].name}がイベントカードを引いた！「${card.emoji}${card.name}」`, ...ns.log.slice(0,29)]
 
@@ -649,6 +655,15 @@ function processYearEnd(ns: any): any {
 function canAct(p: any): boolean {
   const maxActions = p.extraAction ? 2 : 1
   return p.actionUsed < maxActions
+}
+
+// ③ Fisher-Yates シャッフル
+function shuffleArray(arr: any[]): any[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
 }
 
 function recalcAssets(p: any, ns: any): void {

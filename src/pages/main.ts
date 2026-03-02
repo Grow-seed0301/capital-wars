@@ -657,59 +657,44 @@ function renderActions(){
   const canAct = cp.actionUsed < maxAct && !cp.isAI
   const el = document.getElementById('action-buttons')
 
-  el.innerHTML = \`
-    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'doWork()':''}">
-      <div class="text-2xl mb-1">💼</div>
-      <div class="font-bold">はたらく</div>
-      <div class="text-xs opacity-70">\${G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円'}</div>
-    </div>
-    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'showATMPanel()':''}">
-      <div class="text-2xl mb-1">🏧</div>
-      <div class="font-bold">ATM</div>
-      <div class="text-xs opacity-70">ちょきん・おろす</div>
-    </div>
-    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'switchTab(\\\"market\\\")':''}">
-      <div class="text-2xl mb-1">🏢</div>
-      <div class="font-bold">会社を買う</div>
-      <div class="text-xs opacity-70">マーケットへ</div>
-    </div>
-    <div class="action-item \${canAct?'':'disabled'}" onclick="\${canAct?'switchTab(\\\"market\\\")':''}">
-      <div class="text-2xl mb-1">📈</div>
-      <div class="font-bold">株を買う</div>
-      <div class="text-xs opacity-70">マーケットへ</div>
-    </div>
-  \`
+  // ② innerHTML+onclick のエスケープ問題を回避：DOM生成＋addEventListener方式に変更
+  el.innerHTML = ''
 
-  // 金融機関オーナーは融資ボタン
-  if(cp.companies.includes('bank') && !cp.isAI){
-    el.innerHTML += \`
-    <div class="action-item" onclick="showLendPanel()">
-      <div class="text-2xl mb-1">🏦</div>
-      <div class="font-bold">融資する</div>
-      <div class="text-xs opacity-70">他プレイヤーへ貸付</div>
-    </div>\`
-  }
-
-  // 借金があれば返済ボタン
-  if(cp.debts && cp.debts.length > 0 && !cp.isAI){
-    el.innerHTML += \`
-    <div class="action-item" onclick="showRepayPanel()">
-      <div class="text-2xl mb-1">💳</div>
-      <div class="font-bold">返済する</div>
-      <div class="text-xs opacity-70">借金: \${fmt(cp.debts.reduce((s,d)=>s+d.amount,0))}</div>
-    </div>\`
-  }
-
-  // AI turn: auto button
   if(cp.isAI){
-    el.innerHTML = \`
-    <div class="col-span-2 text-center py-4">
+    el.innerHTML = \`<div class="col-span-2 text-center py-4">
       <div class="text-3xl mb-2">🤖</div>
       <div class="font-bold">\${cp.name}のターン（AI）</div>
     </div>\`
+    document.getElementById('endTurnBtn').disabled = true
+    document.getElementById('atm-panel').classList.add('hidden')
+    document.getElementById('dice-panel').classList.add('hidden')
+    document.getElementById('lend-panel').classList.add('hidden')
+    document.getElementById('repay-panel').classList.add('hidden')
+    return
   }
 
-  document.getElementById('endTurnBtn').disabled = cp.isAI
+  const actions = [
+    { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork,        enabled: canAct },
+    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',                                                fn: showATMPanel,  enabled: canAct },
+    { icon:'🏢', label:'会社を買う', sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: canAct },
+    { icon:'📈', label:'株を買う',   sub:'マーケットタブへ →',                                             fn: ()=>switchTab('market'), enabled: canAct },
+  ]
+  if(cp.companies.includes('bank') && !cp.isAI)
+    actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel, enabled: true })
+  if(cp.debts && cp.debts.length > 0)
+    actions.push({ icon:'💳', label:'返済する', sub:'借金: '+fmt(cp.debts.reduce((s,d)=>s+d.amount,0)), fn: showRepayPanel, enabled: true })
+
+  actions.forEach(a=>{
+    const div = document.createElement('div')
+    div.className = 'action-item' + (a.enabled?'':' disabled')
+    div.innerHTML = \`<div class="text-2xl mb-1">\${a.icon}</div>
+      <div class="font-bold">\${a.label}</div>
+      <div class="text-xs opacity-70">\${a.sub}</div>\`
+    if(a.enabled) div.addEventListener('click', a.fn)
+    el.appendChild(div)
+  })
+
+  document.getElementById('endTurnBtn').disabled = false
   document.getElementById('atm-panel').classList.add('hidden')
   document.getElementById('dice-panel').classList.add('hidden')
   document.getElementById('lend-panel').classList.add('hidden')
