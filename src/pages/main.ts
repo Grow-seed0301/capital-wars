@@ -1817,57 +1817,142 @@ async function doAITurn(){
 
   setActionMsg('🤖 '+cp.name+' が考え中...')
 
-  // Simple AI: buy cheapest available, work if poor
   try{
-    // Try to buy a company if we have enough cash and no action used
-    if(cp.actionUsed === 0){
-      const affordable = G.companies
-        .filter(c=>!['restaurant3','railway'].includes(c.id) && !cp.companies.includes(c.id) && cp.cash >= c.cost)
-        .sort((a,b)=>a.cost-b.cost)
-      if(affordable.length>0 && Math.random()>0.4){
-        const pick = affordable[0]
-        const d = await apiPost('/action/buy-company',{state:G, companyId:pick.id})
-        if(d?.success){ G=d.state; await delay(500) }
-      } else if(cp.cash < 300 || Math.random()>0.7){
-        const d = await apiPost('/action/work',{state:G})
-        if(d?.success){ G=d.state; await delay(500) }
-      } else {
-        // deposit some
-        const depositAmt = Math.floor(cp.cash * 0.3 / 100)*100
-        if(depositAmt>=100){
-          const d = await apiPost('/action/deposit',{state:G, amount:depositAmt})
-          if(d?.success){ G=d.state; await delay(500) }
-        } else {
-          const d = await apiPost('/action/work',{state:G})
-          if(d?.success){ G=d.state; await delay(500) }
+    // ── Step 1: サイコロを振る（会社・株を持っている場合は必須） ──
+    const hasRollable = cp.companies.some(cid=>{
+      const c = G.companies.find(x=>x.id===cid)
+      return c && c.rolls.length > 0 && c.id !== 'bank'
+    }) || cp.stocks.some(s=>s.qty>0)
+
+    if(hasRollable && !cp.diceRolled && cp.actionUsed === 0){
+      // サイコロを取得
+      const diceRes = await fetch('/api/game/roll-dice',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({state:G})
+      }).then(r=>r.json())
+      const dice = diceRes.dice || (Math.floor(Math.random()*6)+1)
+
+      // roll-all で全損益一括処理
+      const rollRes = await fetch('/api/game/action/roll-all',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({state:G, dice})
+      }).then(r=>r.json())
+
+      if(rollRes.success){
+        G = rollRes.state
+        await delay(600)
+
+        // メディアボーナス（shrine）が発生した場合 → 最もお金持ちのプレイヤーから徴収
+        if(G.pendingShrineBonus){
+          const richest = G.players
+            .filter(p=>p.id!==G.currentPlayer && !p.bankrupt)
+            .sort((a,b)=>b.cash-a.cash)
+          if(richest.length>0){
+            const sd = await fetch('/api/game/action/shrine-collect',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({state:G, targetPlayerId:richest[0].id})
+            }).then(r=>r.json())
+            if(sd.success) G=sd.state
+            await delay(400)
+          }
         }
+      } else {
+        // roll-all が失敗した場合（予期せぬエラー）はターン終了
+        console.error('AI roll-all failed:', rollRes.error)
+        renderGame()
+        setActionMsg('')
+        await delay(300)
+        doEndTurn()
+        return
       }
     }
 
-    // Roll for owned companies
-    for(const cid of cp.companies){
-      const comp = G.companies.find(x=>x.id===cid)
-      if(!comp || comp.rolls.length===0) continue
-      if(G.players[G.currentPlayer].actionUsed >= (G.players[G.currentPlayer].extraAction?2:1)) break
-      const diceData = await fetch('/api/game/roll-dice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:G})}).then(r=>r.json())
-      const d = await apiPost('/action/company-roll',{state:G, companyId:cid, dice:diceData.dice})
-      if(d?.success){ G=d.state; await delay(500) }
-      if(G.pendingShrineBonus){
-        // Auto pick poorest target
-        const targets = G.players.filter(p=>p.id!==G.currentPlayer).sort((a,b)=>b.cash-a.cash)
-        if(targets.length>0){
-          const sd = await apiPost('/action/shrine-collect',{state:G, targetPlayerId:targets[0].id})
-          if(sd?.success) G=sd.state
+    // ── Step 2: 購入・ATM・はたらく（サイコロ後に実行） ──
+    // 現プレイヤーを最新状態に更新
+    const p = G.players[G.currentPlayer]
+
+    if(p.actionUsed === 0){
+      // 購入判断: 安い会社から買う（在庫あり・未所有・現金足りる）
+      const companyStock = G.companyStock || {}
+      const affordable = G.companies
+        .filter(c=>{
+          if(['restaurant3','railway'].includes(c.id)) return false
+          if(p.companies.includes(c.id)) return false
+          if((companyStock[c.id]??0) <= 0) return false
+          return p.cash >= c.cost
+        })
+        .sort((a,b)=>a.cost-b.cost)
+
+      // 株の購入判断（日本株: 500円, 外国株: 1000円）
+      const stockLimit = G.stockLimit || {}
+      const buyableStocks = G.stocks.filter(st=>{
+        const totalOwned = G.players.reduce((sum,pl)=>{
+          const h = pl.stocks.find(s=>s.id===st.id)
+          return sum+(h?h.qty:0)
+        },0)
+        const limit = stockLimit[st.id]??99
+        return totalOwned < limit && p.cash >= st.buyPrice
+      })
+
+      if(affordable.length>0 && Math.random()>0.4){
+        // 会社を購入
+        const pick = affordable[0]
+        const d = await fetch('/api/game/action/buy-company',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({state:G, companyId:pick.id})
+        }).then(r=>r.json())
+        if(d.success){ G=d.state; await delay(400) }
+      } else if(buyableStocks.length>0 && Math.random()>0.6){
+        // 株を購入
+        const pick = buyableStocks[0]
+        const d = await fetch('/api/game/action/buy-stock',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({state:G, stockId:pick.id, qty:1})
+        }).then(r=>r.json())
+        if(d.success){ G=d.state; await delay(400) }
+      } else if(p.cash < 400 || Math.random()>0.65){
+        // はたらく
+        const d = await fetch('/api/game/action/work',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({state:G})
+        }).then(r=>r.json())
+        if(d.success){ G=d.state; await delay(400) }
+      } else {
+        // ATM預金
+        const depositAmt = Math.floor(G.players[G.currentPlayer].cash * 0.3 / 100)*100
+        if(depositAmt >= 100){
+          const d = await fetch('/api/game/action/deposit',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({state:G, amount:depositAmt})
+          }).then(r=>r.json())
+          if(d.success){ G=d.state; await delay(400) }
+        } else {
+          const d = await fetch('/api/game/action/work',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({state:G})
+          }).then(r=>r.json())
+          if(d.success){ G=d.state; await delay(400) }
         }
       }
     }
 
     renderGame()
     setActionMsg('')
-    await delay(600)
+    await delay(500)
     doEndTurn()
   } catch(e){
-    console.error('AI error',e)
+    console.error('AI error', e)
+    setActionMsg('')
+    renderGame()
+    await delay(300)
     doEndTurn()
   }
 }
