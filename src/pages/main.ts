@@ -1070,63 +1070,97 @@ function startStockRoll(stockId){
 const DICE_EMOJIS = ['','⚀','⚁','⚂','⚃','⚄','⚅']
 
 async function rollDice(){
+  if(processingAction) return
   document.getElementById('rollBtn').disabled = true
   const diceEl = document.getElementById('diceDisplay')
   diceEl.classList.add('rolling')
+  document.getElementById('diceResult').textContent = '🎲 振っています...'
 
-  // animate
+  // サーバーから乱数を先に取得（アニメーションと並行）
+  let diceValue = null
+  try {
+    const diceData = await fetch('/api/game/roll-dice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({state:G})
+    }).then(r=>r.json())
+    diceValue = diceData.dice
+  } catch(e) {
+    // フォールバック：クライアント乱数
+    diceValue = Math.floor(Math.random()*6)+1
+    const ev = G.diceFixed
+    if(ev==='even' && diceValue%2!==0) diceValue = diceValue===6?2:diceValue+1
+    if(ev==='odd'  && diceValue%2===0) diceValue = diceValue===1?3:diceValue-1
+  }
+
+  // アニメーション（800ms）
   let cnt = 0
   const anim = setInterval(()=>{
     diceEl.textContent = DICE_EMOJIS[Math.floor(Math.random()*6)+1]
-    cnt++; if(cnt>10) clearInterval(anim)
+    cnt++
   },80)
-
-  // fetch result
-  const diceData = await fetch('/api/game/roll-dice',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({state:G})
-  }).then(r=>r.json())
-
-  await new Promise(r=>setTimeout(r,900))
+  await new Promise(r=>setTimeout(r,800))
   clearInterval(anim)
   diceEl.classList.remove('rolling')
 
-  const dice = diceData.dice
-  diceEl.textContent = DICE_EMOJIS[dice] || dice
+  // 確定した目を表示
+  const dice = diceValue
+  diceEl.textContent = DICE_EMOJIS[dice] || String(dice)
+  document.getElementById('diceResult').textContent = \`🎲 \${dice} が出た！\`
 
-  // Apply result
-  if(diceContext.type==='company'){
-    const data = await apiPost('/action/company-roll',{state:G, companyId:diceContext.id, dice})
-    if(!data){ document.getElementById('rollBtn').disabled=false; return }
-    if(!data.success){ showToast(data.error,'error'); document.getElementById('rollBtn').disabled=false; return }
+  // 結果をサーバーに送信（processingAction を直接制御）
+  processingAction = true
+  try {
+    if(diceContext.type==='company'){
+      const res = await fetch('/api/game/action/company-roll',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({state:G, companyId:diceContext.id, dice})
+      }).then(r=>r.json())
 
-    const resultText = \`サイコロ \${dice} → \${data.label || '結果なし'}\${data.effect&&data.effect!==0?' ('+( data.effect>0?'+':'')+fmt(data.effect)+')':''}\`
-    document.getElementById('diceResult').textContent = resultText
-    G = data.state
+      if(!res.success){
+        showToast(res.error||'エラー','error')
+        document.getElementById('rollBtn').disabled=false
+        document.getElementById('diceResult').textContent=''
+        return
+      }
+      G = res.state
+      const resultText = \`🎲 \${dice} → \${res.label||''}  \${res.effect&&res.effect!==0?(res.effect>0?'▲+':'')+fmt(res.effect):''}\`
+      document.getElementById('diceResult').textContent = resultText
 
-    if(data.bonus === 'take_2500' || data.bonus === 'take_1250'){
-      showShrineTargets()
-    } else {
-      if(data.effect > 0) spawnCoins(6)
-      setTimeout(()=>{
+      if(res.bonus==='take_2500'||res.bonus==='take_1250'){
+        showShrineTargets()
+      } else {
+        if(res.effect>0) spawnCoins(6)
+        await new Promise(r=>setTimeout(r,1500))
         document.getElementById('dice-panel').classList.add('hidden')
         renderGame()
-      },1500)
-    }
-  } else if(diceContext.type==='stock'){
-    const data = await apiPost('/action/stock-roll',{state:G, stockId:diceContext.id, dice})
-    if(!data){ document.getElementById('rollBtn').disabled=false; return }
-    if(!data.success){ showToast(data.error,'error'); document.getElementById('rollBtn').disabled=false; return }
+      }
 
-    const resultText = \`サイコロ \${dice} → \${data.label}\${data.effect?' ('+( data.effect>0?'+':'')+fmt(data.effect)+')':''}\`
-    document.getElementById('diceResult').textContent = resultText
-    G = data.state
-    if(data.effect > 0) spawnCoins(6)
-    setTimeout(()=>{
+    } else if(diceContext.type==='stock'){
+      const res = await fetch('/api/game/action/stock-roll',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({state:G, stockId:diceContext.id, dice})
+      }).then(r=>r.json())
+
+      if(!res.success){
+        showToast(res.error||'エラー','error')
+        document.getElementById('rollBtn').disabled=false
+        document.getElementById('diceResult').textContent=''
+        return
+      }
+      G = res.state
+      const resultText = \`🎲 \${dice} → \${res.label}  \${res.effect?(res.effect>0?'▲+':'')+fmt(res.effect):''}\`
+      document.getElementById('diceResult').textContent = resultText
+      if(res.effect>0) spawnCoins(6)
+      await new Promise(r=>setTimeout(r,1500))
       document.getElementById('dice-panel').classList.add('hidden')
       renderGame()
-    },1500)
+    }
+  } finally {
+    processingAction = false
+    diceContext = null
   }
 }
 
