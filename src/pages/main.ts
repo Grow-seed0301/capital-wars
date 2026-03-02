@@ -694,6 +694,26 @@ function renderActions(){
     el.appendChild(div)
   })
 
+  // 保有会社の売却ボタン（回数制限なし・自分のターン中はいつでも可）
+  if(cp.companies.length > 0){
+    const sellSection = document.createElement('div')
+    sellSection.className = 'col-span-2 mt-2'
+    sellSection.innerHTML = \`<div class="text-xs font-bold mb-1 opacity-70">💸 会社売却（ターン中何回でも可）</div>\`
+    const sellGrid = document.createElement('div')
+    sellGrid.className = 'flex flex-wrap gap-2'
+    cp.companies.forEach(cid=>{
+      const comp = G.companies.find(x=>x.id===cid)
+      if(!comp) return
+      const btn = document.createElement('button')
+      btn.className = 'btn btn-danger btn-sm'
+      btn.innerHTML = \`\${comp.emoji} \${comp.name} 売却 (+\${fmt(comp.cost)})\`
+      btn.addEventListener('click', ()=> doSellCompany(cid))
+      sellGrid.appendChild(btn)
+    })
+    sellSection.appendChild(sellGrid)
+    el.appendChild(sellSection)
+  }
+
   document.getElementById('endTurnBtn').disabled = false
   document.getElementById('atm-panel').classList.add('hidden')
   document.getElementById('dice-panel').classList.add('hidden')
@@ -738,11 +758,14 @@ function renderPortfolio(){
     wrap.innerHTML += sh
   }
 
-  // 保有会社（addEventListener で確実に動作）
+  // 保有会社（自分のターンなら何回でも売却可能）
   if(cp.companies.length > 0){
+    const isMyTurn = !cp.isAI
     const compDiv = document.createElement('div')
     compDiv.className = 'card-white p-3'
-    compDiv.innerHTML = '<div class="font-bold mb-2">🏢 保有会社</div>'
+    compDiv.innerHTML = \`<div class="font-bold mb-2">🏢 保有会社
+      <span class="text-xs font-normal ml-1" style="color:#4CAF50;">自分のターン中は何回でも売却可</span>
+    </div>\`
     cp.companies.forEach(cid=>{
       const comp = G.companies.find(x=>x.id===cid)
       if(!comp) return
@@ -755,7 +778,12 @@ function renderPortfolio(){
       const sellBtn = document.createElement('button')
       sellBtn.className = 'btn btn-danger btn-sm'
       sellBtn.innerHTML = '💸 売却'
-      sellBtn.addEventListener('click', ()=> doSellCompany(cid))
+      // AIターン中のみ無効化、自分のターンは回数制限なし
+      if(!isMyTurn) {
+        sellBtn.disabled = true
+      } else {
+        sellBtn.addEventListener('click', ()=> doSellCompany(cid))
+      }
       row.appendChild(sellBtn)
       compDiv.appendChild(row)
       if(comp.upgradeTo){
