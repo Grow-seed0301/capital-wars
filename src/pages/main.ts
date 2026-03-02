@@ -688,11 +688,14 @@ function renderPlayersOverview(){
 
 function renderActions(){
   const cp = G.players[G.currentPlayer]
-  const pendingRolls = G.pendingRolls || []
-  const inPurchasePhase = cp.actionUsed === 0  // 購入フェーズ
-  const inRollPhase = pendingRolls.length > 0  // ロールフェーズ
   const el = document.getElementById('action-buttons')
   el.innerHTML = ''
+
+  // パネルを全部隠す
+  document.getElementById('atm-panel').classList.add('hidden')
+  document.getElementById('dice-panel').classList.add('hidden')
+  document.getElementById('lend-panel').classList.add('hidden')
+  document.getElementById('repay-panel').classList.add('hidden')
 
   // AIターン
   if(cp.isAI){
@@ -701,10 +704,6 @@ function renderActions(){
       <div class="font-bold">\${cp.name}のターン（AI）</div>
     </div>\`
     document.getElementById('endTurnBtn').disabled = true
-    document.getElementById('atm-panel').classList.add('hidden')
-    document.getElementById('dice-panel').classList.add('hidden')
-    document.getElementById('lend-panel').classList.add('hidden')
-    document.getElementById('repay-panel').classList.add('hidden')
     return
   }
 
@@ -717,110 +716,53 @@ function renderActions(){
         <div class="text-xs mt-1 opacity-70">ターン終了ボタンを押してください</div>
       </div>\`
     document.getElementById('endTurnBtn').disabled = false
-    document.getElementById('atm-panel').classList.add('hidden')
-    document.getElementById('dice-panel').classList.add('hidden')
-    document.getElementById('lend-panel').classList.add('hidden')
-    document.getElementById('repay-panel').classList.add('hidden')
     return
   }
 
   document.getElementById('endTurnBtn').disabled = false
-  document.getElementById('atm-panel').classList.add('hidden')
-  document.getElementById('lend-panel').classList.add('hidden')
-  document.getElementById('repay-panel').classList.add('hidden')
 
-  // ── ロールフェーズ：保有会社・株のサイコロを順番に振る ──
-  if(inRollPhase){
-    document.getElementById('dice-panel').classList.remove('hidden')
-
-    // 残りロールリストを表示（損益情報も含める）
-    const listHTML = pendingRolls.map((r,i)=>{
-      const isFirst = i === 0
-      const rowStyle = isFirst ? 'background:rgba(255,200,0,0.2);border:1px solid #FFD700;' : ''
-      const rowClass = 'flex items-center justify-between py-2 px-2 rounded-lg mb-1 ' + (isFirst ? 'font-bold' : 'opacity-50')
-      const arrow = isFirst ? '▶️' : '⬜'
-      if(r.type==='company'){
-        const comp = G.companies.find(c=>c.id===r.id)
-        let rollSummary = ''
-        if(comp && comp.rolls){
-          rollSummary = comp.rolls.map(roll=>{
-            const rangeStr = roll.range[0]===roll.range[1] ? String(roll.range[0]) : (roll.range[0]+'-'+roll.range[1])
-            const effStr = roll.effect > 0 ? '+'+fmt(roll.effect) : roll.effect < 0 ? fmt(roll.effect) : roll.label
-            return rangeStr+':'+effStr
-          }).join(' / ')
-        }
-        const infoHTML = isFirst ? \`<span class="text-xs opacity-70">\${rollSummary}</span>\` : ''
-        return \`<div class="\${rowClass}" style="\${rowStyle}">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">\${arrow}</span>
-            <span>\${comp?.emoji} \${comp?.name}</span>
-          </div>
-          \${infoHTML}
+  // ── アクション済み ──
+  if(cp.actionUsed >= 1){
+    // サイコロ結果を持っている場合はメディア対象選択を促す
+    if(G.pendingShrineBonus){
+      el.innerHTML = \`
+        <div class="col-span-2 text-center py-3 rounded-xl" style="background:rgba(255,150,0,0.2);border:2px solid #FF9800;">
+          <div class="text-3xl mb-1">📺</div>
+          <div class="font-bold text-orange-300">メディア広告費を受け取ろう！</div>
+          <div class="text-xs mt-1 opacity-70">アクションタブで対象を選んでください</div>
         </div>\`
-      } else {
-        const st = G.stocks.find(s=>s.id===r.id)
-        const holding = cp.stocks.find(s=>s.id===r.id)
-        const qty = holding?.qty || 0
-        const evenRoll = st ? st.rolls.find(r2=>r2.parity==='even') : null
-        const oddRoll  = st ? st.rolls.find(r2=>r2.parity==='odd')  : null
-        const evenEff = evenRoll ? evenRoll.effect * qty : 0
-        const oddEff  = oddRoll  ? oddRoll.effect  * qty : 0
-        const rollSummary = '偶数:'+(evenEff>0?'+':'')+fmt(evenEff)+' / 奇数:'+(oddEff>0?'+':'')+fmt(oddEff)
-        const infoHTML = isFirst ? \`<span class="text-xs opacity-70">\${rollSummary}</span>\` : ''
-        return \`<div class="\${rowClass}" style="\${rowStyle}">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">\${arrow}</span>
-            <span>\${st?.emoji} \${st?.name}（\${qty}株）</span>
-          </div>
-          \${infoHTML}
-        </div>\`
-      }
-    }).join('')
-
-    el.innerHTML = \`
-      <div class="col-span-2 rounded-xl p-3" style="background:rgba(255,200,0,0.12);border:2px solid #FFD700;">
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <div class="font-bold text-yellow-300">🎲 サイコロフェーズ</div>
-            <div class="text-xs opacity-70">上から順にサイコロを振ってください</div>
-          </div>
-          <div class="text-2xl font-black text-yellow-300">\${pendingRolls.length}回</div>
-        </div>
-        <div class="text-sm">\${listHTML}</div>
-      </div>\`
-
-    // 先頭をサイコロパネルにセット
-    const next = pendingRolls[0]
-    if(next.type==='company') startCompanyRoll(next.id)
-    else startStockRoll(next.id)
-    return
-  }
-
-  document.getElementById('dice-panel').classList.add('hidden')
-
-  // ── 全ロール完了・購入フェーズ済み ──
-  if(!inPurchasePhase && !inRollPhase){
+      return
+    }
     el.innerHTML = \`
       <div class="col-span-2 text-center py-3 rounded-xl" style="background:rgba(0,200,100,0.15);border:2px solid #4CAF50;">
         <div class="text-3xl mb-1">✅</div>
-        <div class="font-bold text-green-300">全アクション完了！</div>
+        <div class="font-bold text-green-300">アクション完了！</div>
         <div class="text-xs opacity-70 mt-1">「ターンを終了する」を押してください</div>
       </div>\`
+    // 売却は常に可能
+    if(cp.companies.length > 0) _appendSellSection(el, cp)
     return
   }
 
-  // ── 通常アクション選択（購入フェーズ）──
-  // 購入フェーズ：はたらく/ATM/会社・株購入 + 購入完了ボタン
+  // ── アクション未使用：行動選択 ──
+  // サイコロアクション（会社・株を持っている場合のみ表示）
+  const hasRollable = cp.companies.some(cid=>{
+    const c = G.companies.find(x=>x.id===cid)
+    return c && c.rolls.length > 0 && c.id !== 'bank'
+  }) || cp.stocks.some(s=>s.qty>0)
+
   const actions = [
-    { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork,           enabled: true },
-    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',                                                fn: showATMPanel,     enabled: true },
-    { icon:'🏢', label:'会社を買う', sub:'何個でも購入可',                                                  fn: ()=>switchTab('market'), enabled: true },
-    { icon:'📈', label:'株を買う',   sub:'何株でも購入可',                                                  fn: ()=>switchTab('market'), enabled: true },
+    { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork },
+    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',   fn: showATMPanel },
+    { icon:'🏢', label:'会社を買う', sub:'何個でも購入可',      fn: ()=>switchTab('market') },
+    { icon:'📈', label:'株を買う',   sub:'何株でも購入可',      fn: ()=>switchTab('market') },
   ]
+  if(hasRollable)
+    actions.push({ icon:'🎲', label:'サイコロ', sub:'全会社・株の損益を一括取得', fn: showDicePanel })
   if(cp.companies.includes('bank'))
-    actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel, enabled: true })
+    actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel })
   if(cp.debts && cp.debts.length > 0)
-    actions.push({ icon:'💳', label:'返済する', sub:'借金: '+fmt(cp.debts.reduce((s,d)=>s+d.amount,0)), fn: showRepayPanel, enabled: true })
+    actions.push({ icon:'💳', label:'返済する', sub:'借金: '+fmt(cp.debts.reduce((s,d)=>s+d.amount,0)), fn: showRepayPanel })
 
   actions.forEach(a=>{
     const div = document.createElement('div')
@@ -832,49 +774,73 @@ function renderActions(){
     el.appendChild(div)
   })
 
-  // 売却ボタン（購入フェーズでも可）
-  if(cp.companies.length > 0){
-    const sellSection = document.createElement('div')
-    sellSection.className = 'col-span-2 mt-2'
-    sellSection.innerHTML = \`<div class="text-xs font-bold mb-1 opacity-70">💸 会社売却（購入フェーズ中いつでも可）</div>\`
-    const sellGrid = document.createElement('div')
-    sellGrid.className = 'flex flex-wrap gap-2'
-    cp.companies.forEach(cid=>{
-      const comp = G.companies.find(x=>x.id===cid)
-      if(!comp) return
-      const btn = document.createElement('button')
-      btn.className = 'btn btn-danger btn-sm'
-      btn.innerHTML = \`\${comp.emoji} \${comp.name} 売却 (+\${fmt(comp.cost)})\`
-      btn.addEventListener('click', ()=> doSellCompany(cid))
-      sellGrid.appendChild(btn)
-    })
-    sellSection.appendChild(sellGrid)
-    el.appendChild(sellSection)
-  }
+  // 売却ボタン（常に可）
+  if(cp.companies.length > 0) _appendSellSection(el, cp)
+}
 
-  // 購入完了ボタン：押すとロールフェーズへ
-  const finishSection = document.createElement('div')
-  finishSection.className = 'col-span-2 mt-3'
-  // サイコロ数を事前計算
-  const diceableCompanies = cp.companies.filter(cid=>{
-    const comp = G.companies.find(c=>c.id===cid)
-    return comp && comp.rolls.length > 0 && comp.id !== 'bank'
+// 会社売却セクションを追加するヘルパー
+function _appendSellSection(el, cp){
+  const sellSection = document.createElement('div')
+  sellSection.className = 'col-span-2 mt-2'
+  sellSection.innerHTML = \`<div class="text-xs font-bold mb-1 opacity-70">💸 会社売却（いつでも可）</div>\`
+  const sellGrid = document.createElement('div')
+  sellGrid.className = 'flex flex-wrap gap-2'
+  cp.companies.forEach(cid=>{
+    const comp = G.companies.find(x=>x.id===cid)
+    if(!comp) return
+    const btn = document.createElement('button')
+    btn.className = 'btn btn-danger btn-sm'
+    btn.innerHTML = comp.emoji+' '+comp.name+' 売却 (+'+fmt(comp.cost)+')'
+    btn.addEventListener('click', ()=> doSellCompany(cid))
+    sellGrid.appendChild(btn)
   })
-  const diceableStocks = cp.stocks.filter(s=>s.qty>0)
-  const totalDice = diceableCompanies.length + diceableStocks.length
-  const hasPurchased = cp.companies.length > 0 || cp.stocks.some(s=>s.qty>0)
-  const finishBtn = document.createElement('button')
-  finishBtn.className = 'btn btn-primary w-full'
-  if(totalDice > 0){
-    finishBtn.innerHTML = '\u2705 \u8cfc\u5165\u5b8c\u4e86 \u2192 \ud83c\udfb2\u00d7'+totalDice+' \u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308d\u3046\uff01'
-  } else {
-    finishBtn.innerHTML = hasPurchased
-      ? '✅ 購入完了（サイコロなし）→ ターン終了へ'
-      : '✅ 購入なし → ターン終了へ'
+  sellSection.appendChild(sellGrid)
+  el.appendChild(sellSection)
+}
+
+// サイコロパネルを表示（保有会社・株の損益予告を表示）
+function showDicePanel(){
+  const cp = G.players[G.currentPlayer]
+  // 損益予告一覧を生成
+  let previewHTML = ''
+  for(const cid of cp.companies){
+    const comp = G.companies.find(c=>c.id===cid)
+    if(!comp || comp.rolls.length===0 || comp.id==='bank') continue
+    const summary = comp.rolls.map(r=>{
+      const rangeStr = r.range[0]===r.range[1] ? String(r.range[0]) : (r.range[0]+'-'+r.range[1])
+      const effStr = r.effect>0 ? '+'+fmt(r.effect) : r.effect<0 ? fmt(r.effect) : r.label
+      return rangeStr+': '+effStr
+    }).join(' / ')
+    previewHTML += \`<div class="flex justify-between text-sm py-1 border-b border-white border-opacity-10">
+      <span>\${comp.emoji} \${comp.name}</span>
+      <span class="text-xs opacity-60">\${summary}</span>
+    </div>\`
   }
-  finishBtn.addEventListener('click', doFinishPurchase)
-  finishSection.appendChild(finishBtn)
-  el.appendChild(finishSection)
+  for(const s of cp.stocks){
+    if(s.qty===0) continue
+    const st = G.stocks.find(x=>x.id===s.id)
+    if(!st) continue
+    const evenRoll = st.rolls.find(r=>r.parity==='even')
+    const oddRoll  = st.rolls.find(r=>r.parity==='odd')
+    const evenEff = evenRoll ? evenRoll.effect*s.qty : 0
+    const oddEff  = oddRoll  ? oddRoll.effect*s.qty  : 0
+    previewHTML += \`<div class="flex justify-between text-sm py-1 border-b border-white border-opacity-10">
+      <span>\${st.emoji} \${st.name}（\${s.qty}株）</span>
+      <span class="text-xs opacity-60">偶数: \${evenEff>0?'+':''}\${fmt(evenEff)} / 奇数: \${oddEff>0?'+':''}\${fmt(oddEff)}</span>
+    </div>\`
+  }
+  document.getElementById('dicePanelTitle').textContent = '\ud83c\udfb2 サイコロを振ろう！'
+  const infoEl = document.getElementById('diceRollInfo')
+  if(infoEl) infoEl.innerHTML = previewHTML || '（会社・株なし）'
+  document.getElementById('diceDisplay').textContent = '\ud83c\udfb2'
+  document.getElementById('diceResult').textContent = ''
+  document.getElementById('diceResult').style.color = '#fff'
+  document.getElementById('rollBtn').disabled = false
+  const countEl = document.getElementById('diceRollCount')
+  if(countEl) countEl.textContent = ''
+  diceContext = {type:'roll-all', id:''}
+  document.getElementById('dice-panel').classList.remove('hidden')
+  switchTab('actions')
 }
 
 function renderPortfolio(){
@@ -1094,7 +1060,7 @@ function renderMarket(){
   // ── サイコロアクション（保有済み会社・株のロール）──
   const diceTitle = document.createElement('h3')
   diceTitle.className = 'font-bold mt-4 mb-2'
-  diceTitle.textContent = '🎲 サイコロアクション'
+  diceTitle.textContent = '\ud83c\udfb2 \u30b5\u30a4\u30b3\u30ed\u30a2\u30af\u30b7\u30e7\u30f3'
   el.appendChild(diceTitle)
 
   const diceList = document.createElement('div')
@@ -1107,15 +1073,11 @@ function renderMarket(){
     if(!comp || comp.rolls.length===0 || comp.id==='bank') return
     hasRollable = true
     const card = document.createElement('div')
-    card.className = 'item-card owned ' + (canAct ? '' : 'disabled')
+    card.className = 'item-card owned'
     card.innerHTML = \`
-      \${comp.emoji} <span class="font-bold">\${comp.name}</span> のサイコロ
+      \${comp.emoji} <span class="font-bold">\${comp.name}</span>
       <div class="text-xs opacity-70">\${comp.rolls.map(r=>r.range[0]+'-'+r.range[1]+': '+r.label).join(' / ')}</div>
     \`
-    if(canAct){
-      card.style.cursor = 'pointer'
-      card.addEventListener('click', ()=> startCompanyRoll(cid))
-    }
     diceList.appendChild(card)
   })
 
@@ -1125,23 +1087,29 @@ function renderMarket(){
     if(!st) return
     hasRollable = true
     const card = document.createElement('div')
-    card.className = 'item-card owned ' + (canAct ? '' : 'disabled')
+    card.className = 'item-card owned'
     card.innerHTML = \`
-      \${st.emoji} <span class="font-bold">\${st.name}</span> の配当 (\${s.qty}株)
-      <div class="text-xs opacity-70">偶数: +\${yen(st.rolls[0].effect*s.qty)}円 / 奇数: \${yen(st.rolls[1].effect*s.qty)}円</div>
+      \${st.emoji} <span class="font-bold">\${st.name}</span>（\${s.qty}株）
+      <div class="text-xs opacity-70">\u5076\u6570: +\${yen(st.rolls[0].effect*s.qty)}\u5186 / \u5947\u6570: \${yen(st.rolls[1].effect*s.qty)}\u5186</div>
     \`
-    if(canAct){
-      card.style.cursor = 'pointer'
-      card.addEventListener('click', ()=> startStockRoll(s.id))
-    }
     diceList.appendChild(card)
   })
 
   if(!hasRollable){
     const empty = document.createElement('div')
     empty.className = 'text-sm opacity-50'
-    empty.textContent = '会社・株を購入するとサイコロを振れます'
+    empty.textContent = '\u4f1a\u793e\u30fb\u682a\u3092\u8cfc\u5165\u3059\u308b\u3068\u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308c\u307e\u3059'
     diceList.appendChild(empty)
+  } else if(canAct){
+    // \u307e\u3068\u3081\u3066\u30b5\u30a4\u30b3\u30edボタン
+    const rollAllBtn = document.createElement('button')
+    rollAllBtn.className = 'btn btn-warning w-full mt-2'
+    rollAllBtn.innerHTML = '\ud83c\udfb2 \u307e\u3068\u3081\u3066\u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308b\uff01(\u5168\u4f1a\u793e\u30fb\u682a\u306e\u640d\u76ca\u3092\u4e00\u62ec\u53d6\u5f97)'
+    rollAllBtn.addEventListener('click', ()=>{
+      showDicePanel()
+      switchTab('actions')
+    })
+    diceList.appendChild(rollAllBtn)
   }
   el.appendChild(diceList)
 }
@@ -1420,9 +1388,9 @@ async function rollDice(){
   document.getElementById('rollBtn').disabled = true
   const diceEl = document.getElementById('diceDisplay')
   diceEl.classList.add('rolling')
-  document.getElementById('diceResult').textContent = '🎲 振っています...'
+  document.getElementById('diceResult').textContent = '\ud83c\udfb2 \u632f\u3063\u3066\u3044\u307e\u3059...'
 
-  // サーバーから乱数を先に取得（アニメーションと並行）
+  // \u30b5\u30fc\u30d0\u30fc\u304b\u3089\u4e71\u6570\u3092\u5148\u306b\u53d6\u5f97
   let diceValue = null
   try {
     const diceData = await fetch('/api/game/roll-dice',{
@@ -1432,93 +1400,82 @@ async function rollDice(){
     }).then(r=>r.json())
     diceValue = diceData.dice
   } catch(e) {
-    // フォールバック：クライアント乱数
+    // \u30d5\u30a9\u30fc\u30eb\u30d0\u30c3\u30af\uff1a\u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u4e71\u6570
     diceValue = Math.floor(Math.random()*6)+1
     const ev = G.diceFixed
     if(ev==='even' && diceValue%2!==0) diceValue = diceValue===6?2:diceValue+1
     if(ev==='odd'  && diceValue%2===0) diceValue = diceValue===1?3:diceValue-1
   }
 
-  // アニメーション（800ms）
-  let cnt = 0
+  // \u30a2\u30cb\u30e1\u30fc\u30b7\u30e7\u30f3\uff08800ms\uff09
   const anim = setInterval(()=>{
     diceEl.textContent = DICE_EMOJIS[Math.floor(Math.random()*6)+1]
-    cnt++
   },80)
   await new Promise(r=>setTimeout(r,800))
   clearInterval(anim)
   diceEl.classList.remove('rolling')
 
-  // 確定した目を表示
   const dice = diceValue
   diceEl.textContent = DICE_EMOJIS[dice] || String(dice)
-  document.getElementById('diceResult').textContent = \`🎲 \${dice} が出た！\`
+  document.getElementById('diceResult').innerHTML =
+    '<div style="font-size:1.1rem;">\ud83c\udfb2 ' + dice + ' \u304c\u51fa\u305f\uff01</div>'
 
-  // 結果をサーバーに送信（processingAction を直接制御）
   processingAction = true
   try {
-    if(diceContext.type==='company'){
-      const res = await fetch('/api/game/action/company-roll',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({state:G, companyId:diceContext.id, dice})
-      }).then(r=>r.json())
+    // \u2015\u2015 roll-all\uff1a\u30b5\u30a4\u30b3\u30ed1\u56de\u3067\u5168\u4fdd\u6709\u4f1a\u793e\u30fb\u682a\u306e\u640d\u76ca\u3092\u4e00\u62ec\u51e6\u7406 \u2015\u2015
+    const res = await fetch('/api/game/action/roll-all',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({state:G, dice})
+    }).then(r=>r.json())
 
-      if(!res.success){
-        showToast(res.error||'エラー','error')
-        document.getElementById('rollBtn').disabled=false
-        document.getElementById('diceResult').textContent=''
-        return
-      }
-      G = res.state
-      const effSign = res.effect > 0 ? '+' : ''
-      const effColor = res.effect > 0 ? '#4CAF50' : res.effect < 0 ? '#f44336' : '#fff'
-      const diceResultEl = document.getElementById('diceResult')
-      diceResultEl.innerHTML = res.effect !== 0
-        ? '<div>\ud83c\udfb2 '+dice+' \u2192 '+(res.label||'')+'</div><div style="color:'+effColor+';font-size:1.5rem;">'+effSign+fmt(res.effect)+'</div>'
-        : '<div>\ud83c\udfb2 '+dice+' \u2192 '+(res.label||'')+'</div>'
+    if(!res.success){
+      showToast(res.error||'\u30a8\u30e9\u30fc','error')
+      document.getElementById('rollBtn').disabled=false
+      document.getElementById('diceResult').textContent=''
+      return
+    }
+    G = res.state
 
-      if(res.bonus==='take_2500'||res.bonus==='take_1250'){
-        showShrineTargets()
-      } else {
-        if(res.effect>0) spawnCoins(6)
-        await new Promise(r=>setTimeout(r,1500))
-        // 破産チェック
-        if(res.bankrupted !== null && res.bankrupted !== undefined){
-          const bp = G.players[res.bankrupted]
-          showBankruptNotice(bp.name)
-        }
-        afterRollComplete()
-      }
+    // \u5185\u8a33\u3092\u8868\u793a
+    const results = res.results || []
+    const totalEffect = res.totalEffect || 0
+    const diceResultEl = document.getElementById('diceResult')
 
-    } else if(diceContext.type==='stock'){
-      const res = await fetch('/api/game/action/stock-roll',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({state:G, stockId:diceContext.id, dice})
-      }).then(r=>r.json())
+    let html = '<div style="font-size:1.1rem;">\ud83c\udfb2 ' + dice + ' \u304c\u51fa\u305f\uff01</div>'
+    if(results.length > 0){
+      html += '<div style="margin-top:6px;text-align:left;font-size:0.85rem;">'
+      results.forEach(function(r){
+        const sign = r.effect > 0 ? '+' : ''
+        const color = r.effect > 0 ? '#4CAF50' : r.effect < 0 ? '#f44336' : '#aaa'
+        const effText = r.effect !== 0 ? (' <span style="color:'+color+';font-weight:bold;">'+sign+fmt(r.effect)+'</span>') : ''
+        html += '<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.1);">'
+          + r.emoji + ' ' + r.name + ': ' + r.label + effText + '</div>'
+      })
+      html += '</div>'
+      const totalSign = totalEffect > 0 ? '+' : ''
+      const totalColor = totalEffect > 0 ? '#4CAF50' : totalEffect < 0 ? '#f44336' : '#fff'
+      html += '<div style="margin-top:8px;font-size:1.4rem;font-weight:black;color:'+totalColor+';">'
+        + '\u5408\u8a08 ' + totalSign + fmt(totalEffect) + '\u5186</div>'
+    } else {
+      html += '<div style="margin-top:6px;color:#aaa;">\uff08\u4fdd\u6709\u4f1a\u793e\u30fb\u682a\u306a\u3057\uff09</div>'
+    }
+    diceResultEl.innerHTML = html
 
-      if(!res.success){
-        showToast(res.error||'エラー','error')
-        document.getElementById('rollBtn').disabled=false
-        document.getElementById('diceResult').textContent=''
-        return
-      }
-      G = res.state
-      const eff2Sign = res.effect > 0 ? '+' : ''
-      const eff2Color = res.effect > 0 ? '#4CAF50' : res.effect < 0 ? '#f44336' : '#fff'
-      const diceResultEl2 = document.getElementById('diceResult')
-      diceResultEl2.innerHTML = res.effect
-        ? '<div>\ud83c\udfb2 '+dice+' \u2192 '+res.label+'</div><div style="color:'+eff2Color+';font-size:1.5rem;">'+eff2Sign+fmt(res.effect)+'</div>'
-        : '<div>\ud83c\udfb2 '+dice+' \u2192 '+res.label+'</div>'
-      if(res.effect>0) spawnCoins(6)
-      await new Promise(r=>setTimeout(r,1500))
-      // 破産チェック
+    // \u30dc\u30fc\u30ca\u30b9\uff1a\u30e1\u30c7\u30a3\u30a2\u306e\u5e83\u544a\u8cb4\u53d6\u308a
+    if(res.bonus === 'take_2500' || res.bonus === 'take_1250'){
+      showShrineTargets()
+    } else {
+      if(totalEffect > 0) spawnCoins(Math.min(8, Math.ceil(totalEffect/200)))
+      await new Promise(r=>setTimeout(r,2000))
       if(res.bankrupted !== null && res.bankrupted !== undefined){
         const bp = G.players[res.bankrupted]
         showBankruptNotice(bp.name)
       }
-      afterRollComplete()
+      // \u30b5\u30a4\u30b3\u30ed\u5b8c\u4e86 \u2192 \u30c0\u30a4\u30b9\u30d1\u30cd\u30eb\u3092\u9690\u3057\u3066\u30a2\u30af\u30b7\u30e7\u30f3\u5b8c\u4e86\u8868\u793a
+      document.getElementById('dice-panel').classList.add('hidden')
+      renderGame()
+      showToast('\ud83c\udf89 \u30b5\u30a4\u30b3\u30ed\u5b8c\u4e86\uff01\u30bf\u30fc\u30f3\u3092\u7d42\u4e86\u3057\u3066\u304f\u3060\u3055\u3044','info')
     }
   } finally {
     processingAction = false
@@ -1526,20 +1483,11 @@ async function rollDice(){
   }
 }
 
-// ロール完了後の共通処理：次のpendingRollsがあれば自動的に次へ
+// ロール完了後（roll-allではrenderGameで代替、互換のため残す）
 function afterRollComplete(){
-  const pendingRolls = G.pendingRolls || []
-  if(pendingRolls.length > 0){
-    // まだ残りのロールがある → renderGame()でアクションタブを更新（自動で次のサイコロをセット）
-    renderGame()
-    switchTab('actions')
-    // diceパネルは renderActions 内でセットされる
-  } else {
-    // 全ロール完了
-    document.getElementById('dice-panel').classList.add('hidden')
-    renderGame()
-    showToast('🎉 全てのサイコロ完了！ターンを終了してください','info')
-  }
+  document.getElementById('dice-panel').classList.add('hidden')
+  renderGame()
+  showToast('\ud83c\udf89 \u30b5\u30a4\u30b3\u30ed\u5b8c\u4e86\uff01\u30bf\u30fc\u30f3\u3092\u7d42\u4e86\u3057\u3066\u304f\u3060\u3055\u3044','info')
 }
 
 function cancelDice(){
