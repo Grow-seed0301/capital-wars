@@ -988,18 +988,38 @@ function renderMarket(){
   // ── 会社マーケット ──
   const compTitle = document.createElement('h3')
   compTitle.className = 'font-bold mb-2'
-  compTitle.textContent = '🏢 会社マーケット'
+  compTitle.textContent = '\ud83c\udfe2 \u4f1a\u793e\u30de\u30fc\u30b1\u30c3\u30c8'
   el.appendChild(compTitle)
 
   const compGrid = document.createElement('div')
   compGrid.className = 'grid grid-cols-2 gap-2 mb-4'
 
+  const companyStock = G.companyStock || {}
+
   G.companies.filter(c=>!['restaurant3','railway'].includes(c.id)).forEach(comp=>{
     const owned = cp.companies.includes(comp.id)
-    const canBuy = canAct && !owned && cp.cash >= comp.cost
+    const stock = companyStock[comp.id] ?? 99
+    const soldOut = stock <= 0
+    const canBuy = canAct && !owned && !soldOut && cp.cash >= comp.cost
+
+    // 在庫バッジ
+    let stockBadge = ''
+    if(owned){
+      stockBadge = '<div class="text-xs text-green-400 font-bold mt-1">\u2705 \u6240\u6301\u6e08\u307f</div>'
+    } else if(soldOut){
+      stockBadge = '<div class="text-xs font-bold mt-1" style="color:#f44336;">\ud83d\udeab \u58f2\u308a\u5207\u308c</div>'
+    } else {
+      const color = stock <= 1 ? '#FF9800' : '#90caf9'
+      stockBadge = '<div class="text-xs font-bold mt-1" style="color:'+color+';">\ud83d\udce6 \u6b8b\u308a '+stock+' \u679a</div>'
+    }
 
     // サイコロ収益テキスト生成
-    const rollText = comp.rolls.map(r=>'🎲'+r.range[0]+'-'+r.range[1]+': '+r.label).join('<br>')
+    const rollText = comp.rolls.length > 0
+      ? comp.rolls.map(r=>{
+          const rStr = r.range[0]===r.range[1] ? String(r.range[0]) : r.range[0]+'-'+r.range[1]
+          return '\ud83c\udfb2'+rStr+': '+r.label
+        }).join('<br>')
+      : '\u30b5\u30a4\u30b3\u30ed\u306a\u3057(\u7279\u6b8a)'
 
     const card = document.createElement('div')
     card.className = 'item-card ' + (owned ? 'owned' : canBuy ? '' : 'disabled')
@@ -1009,14 +1029,17 @@ function renderMarket(){
       <div class="text-xs opacity-70 mb-1">\${comp.desc}</div>
       <div class="font-black mb-1" style="color:var(--c3);">\${fmt(comp.cost)}</div>
       <div class="text-xs" style="color:#90caf9;">\${rollText}</div>
-      \${owned ? '<div class="text-xs text-green-400 font-bold mt-1">✅ 所持済み</div>' : ''}
+      \${stockBadge}
     \`
     if(canBuy){
       card.style.cursor = 'pointer'
       card.addEventListener('click', ()=> doBuyCompany(comp.id))
     } else if(owned){
       card.style.cursor = 'default'
-      card.addEventListener('click', ()=> showToast('すでに持っています','error'))
+      card.addEventListener('click', ()=> showToast('\u3059\u3067\u306b\u6301\u3063\u3066\u3044\u307e\u3059','error'))
+    } else if(soldOut){
+      card.style.cursor = 'default'
+      card.addEventListener('click', ()=> showToast('\u58f2\u308a\u5207\u308c\u3067\u3059','error'))
     }
     compGrid.appendChild(card)
   })
@@ -1025,11 +1048,13 @@ function renderMarket(){
   // ── 株マーケット ──
   const stTitle = document.createElement('h3')
   stTitle.className = 'font-bold mb-2'
-  stTitle.textContent = '📈 株マーケット'
+  stTitle.textContent = '\ud83d\udcc8 \u682a\u30de\u30fc\u30b1\u30c3\u30c8'
   el.appendChild(stTitle)
 
   const stGrid = document.createElement('div')
   stGrid.className = 'grid grid-cols-2 gap-2'
+
+  const stockLimit = G.stockLimit || {}
 
   G.stocks.forEach(st=>{
     const holding = cp.stocks.find(s=>s.id===st.id)
@@ -1037,7 +1062,26 @@ function renderMarket(){
     let price = st.buyPrice
     if(G.activeEventTypes.includes('stock_x2')) price *= 2
     if(G.activeEventTypes.includes('stock_half')) price = Math.floor(price/2)
-    const canBuy = canAct && cp.cash >= price
+
+    // 全プレイヤーの保有合計
+    const totalOwned = G.players.reduce((sum, pl)=>{
+      const h = pl.stocks.find(s=>s.id===st.id)
+      return sum + (h?h.qty:0)
+    }, 0)
+    const limit = stockLimit[st.id] ?? 99
+    const remaining = Math.max(0, limit - totalOwned)
+    const soldOut = remaining <= 0
+
+    const canBuy = canAct && !soldOut && cp.cash >= price
+
+    // 在庫バッジ
+    let stockBadge = ''
+    if(soldOut){
+      stockBadge = '<div class="text-xs font-bold mt-1" style="color:#f44336;">\ud83d\udeab \u58f2\u308a\u5207\u308c</div>'
+    } else {
+      const color = remaining <= 1 ? '#FF9800' : '#90caf9'
+      stockBadge = '<div class="text-xs mt-1" style="color:'+color+';">\ud83d\udce6 \u6b8b\u308a '+remaining+' \u682a</div>'
+    }
 
     const card = document.createElement('div')
     card.className = 'item-card ' + (canBuy ? '' : 'disabled')
@@ -1045,13 +1089,17 @@ function renderMarket(){
       <div class="text-2xl mb-1">\${st.emoji}</div>
       <div class="font-bold text-sm">\${st.name}</div>
       <div class="text-xs opacity-70 mb-1">\${st.desc}</div>
-      <div class="font-black mb-1" style="color:var(--c3);">\${fmt(price)}/株</div>
-      <div class="text-xs" style="color:#90caf9;">偶数: +\${yen(st.rolls[0].effect)}円 / 奇数: \${yen(st.rolls[1].effect)}円</div>
-      \${qty>0 ? '<div class="text-xs text-blue-300 font-bold mt-1">📊 '+qty+'株保有</div>' : ''}
+      <div class="font-black mb-1" style="color:var(--c3);">\${fmt(price)}/\u682a</div>
+      <div class="text-xs" style="color:#90caf9;">\u5076\u6570: +\${yen(st.rolls[0].effect)}\u5186 / \u5947\u6570: \${yen(st.rolls[1].effect)}\u5186</div>
+      \${qty>0 ? '<div class="text-xs text-blue-300 font-bold mt-1">\ud83d\udcca '+qty+'\u682a\u4fdd\u6709</div>' : ''}
+      \${stockBadge}
     \`
     if(canBuy){
       card.style.cursor = 'pointer'
       card.addEventListener('click', ()=> doBuyStock(st.id))
+    } else if(soldOut){
+      card.style.cursor = 'default'
+      card.addEventListener('click', ()=> showToast('\u58f2\u308a\u5207\u308c\u3067\u3059','error'))
     }
     stGrid.appendChild(card)
   })
@@ -1227,19 +1275,21 @@ async function doWithdraw(){
 // Company buy
 async function doBuyCompany(companyId){
   const comp = G.companies.find(c=>c.id===companyId)
-  if(!comp){ showToast('会社データが見つかりません','error'); return }
+  if(!comp){ showToast('\u4f1a\u793e\u30c7\u30fc\u30bf\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093','error'); return }
+  const stock = (G.companyStock||{})[companyId] ?? 99
   showConfirm(
-    comp.emoji+' '+comp.name+'を買う？',
+    comp.emoji+' '+comp.name+'\u3092\u8cb7\u3046\uff1f',
     \`<div class="text-2xl font-black" style="color:#f44336;">\${fmt(comp.cost)}</div>
     <div class="text-sm mt-1">\${comp.desc}</div>
-    \${comp.rolls&&comp.rolls.length>0?'<div class="text-xs mt-2" style="color:#90caf9;">購入完了後にサイコロを振れます</div>':''}\`,
+    <div class="text-xs mt-2" style="color:#90caf9;">\ud83d\udce6 \u5728\u5eab: \u6b8b\u308a\${stock}\u679a</div>
+    \${comp.rolls&&comp.rolls.length>0?'<div class="text-xs mt-1" style="color:#aaa;">\u30b5\u30a4\u30b3\u30ed\u3067\u640d\u76ca\u53d6\u5f97</div>':''}\`,
     async ()=>{
       const data = await apiPost('/action/buy-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
       G = data.state
       spawnCoins(5)
-      showToast('🏢 '+comp.name+'を購入！','info')
+      showToast('\ud83c\udfe2 '+comp.name+'\u3092\u8cfc\u5165\uff01','info')
       renderGame()
     }
   )
@@ -1287,21 +1337,27 @@ async function doSellCompany(companyId){
 // Stock buy
 async function doBuyStock(stockId){
   const st = G.stocks.find(s=>s.id===stockId)
-  if(!st){ showToast('株データが見つかりません','error'); return }
+  if(!st){ showToast('\u682a\u30c7\u30fc\u30bf\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093','error'); return }
   let price = st.buyPrice
   if(G.activeEventTypes.includes('stock_x2')) price*=2
   if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
+  // 在庫残数を計算
+  const limit = (G.stockLimit||{})[stockId] ?? 99
+  const totalOwned = G.players.reduce((sum,pl)=>{
+    const h = pl.stocks.find(s=>s.id===stockId); return sum+(h?h.qty:0)
+  }, 0)
+  const remaining = Math.max(0, limit - totalOwned)
   showConfirm(
-    st.emoji+' '+st.name+'を買う？',
-    \`1株 <span class="font-black">\${fmt(price)}</span><br>\${st.desc}
-    <div class="text-xs mt-2" style="color:#90caf9;">購入完了後にサイコロを振れます</div>\`,
+    st.emoji+' '+st.name+'\u3092\u8cb7\u3046\uff1f',
+    \`1\u682a <span class="font-black">\${fmt(price)}</span><br>\${st.desc}
+    <div class="text-xs mt-2" style="color:#90caf9;">\u5728\u5eab: \u6b8b\u308a\${remaining}\u682a\uff08\u4e0a\u9650\${limit}\u682a\uff09</div>\`,
     async ()=>{
       const data = await apiPost('/action/buy-stock',{state:G, stockId, qty:1})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
       G = data.state
       spawnCoins(4)
-      showToast('📈 '+st.name+'を購入！','info')
+      showToast('\ud83d\udcc8 '+st.name+'\u3092\u8cfc\u5165\uff01','info')
       renderGame()
     }
   )

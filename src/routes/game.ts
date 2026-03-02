@@ -117,6 +117,41 @@ function calcCompanyRoll(companyId: string, dice: number, eventTypes: string[]):
 }
 
 // ============================================================
+// 在庫初期化ヘルパー
+// ============================================================
+
+// プレイヤー数から会社在庫数を計算
+function calcCompanyStock(playerCount: number): Record<string, number> {
+  let normal: number  // restaurant / media / bus
+  let bank: number
+  if (playerCount <= 4) {
+    normal = 3; bank = 1
+  } else if (playerCount <= 8) {
+    normal = 6; bank = 2
+  } else {
+    normal = 8; bank = 3
+  }
+  return {
+    restaurant: normal,
+    media:      normal,
+    bus:        normal,
+    bank:       bank,
+    // restaurant3 / railway はアップグレード先なので独立管理しない
+    // （restaurant / bus の在庫 1 枚がそのまま変換される）
+    restaurant3: 0,
+    railway:     0,
+  }
+}
+
+// プレイヤー数から株在庫数を計算（各株 = プレイヤー人数と同数）
+function calcStockLimit(playerCount: number): Record<string, number> {
+  return {
+    japan:   playerCount,
+    foreign: playerCount,
+  }
+}
+
+// ============================================================
 // ゲームスタート
 // ============================================================
 gameRouter.post('/start', async (c) => {
@@ -141,6 +176,8 @@ gameRouter.post('/start', async (c) => {
     skipTurn: false,
   }))
 
+  const playerCount = playerDefs.length
+
   const state = {
     players,
     year: 1,
@@ -160,16 +197,18 @@ gameRouter.post('/start', async (c) => {
     handoffTo: null as number | null,
     // 融資関係
     pendingBankAction: null as any,
-    // サイコロ待ちキュー: 購入完了後に保有会社・株を順番にロールする
+    // サイコロ待ちキュー
     pendingRolls: [] as { type: 'company' | 'stock', id: string }[],
-    // 後方互換 (フロントで参照されないよう null に固定)
     pendingRoll: null as null | { type: 'company' | 'stock', id: string },
     // メディア効果の対象選択
     pendingShrineBonus: null as null | { amount: number, ownerId: number },
     // チャリティ（投資家イベント）
     charityProcessed: false,
     diceFixed: null as null | 'even' | 'odd',
-    eventDeck: shuffleArray([...EVENT_CARDS.map((_, i) => i)]) as number[],  // ③ シャッフルデッキ
+    eventDeck: shuffleArray([...EVENT_CARDS.map((_, i) => i)]) as number[],
+    // ── 在庫管理 ──
+    companyStock: calcCompanyStock(playerCount) as Record<string, number>,
+    stockLimit:   calcStockLimit(playerCount)   as Record<string, number>,
   }
 
   // 初回ターン順をセット（全員ATM=0なのでそのまま）
@@ -272,7 +311,7 @@ gameRouter.post('/action/buy-company', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
 
-  // アクション済み（サイコロ or 働く or ATM）なら購入不可
+  // アクション済みなら購入不可
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
 
@@ -281,9 +320,16 @@ gameRouter.post('/action/buy-company', async (c) => {
   if (p.cash < comp.cost) return c.json({ success: false, error: '現金が足りません' })
   if (p.companies.includes(companyId)) return c.json({ success: false, error: 'すでに所有しています' })
 
+  // 在庫チェック（restaurant3 / railway はアップグレード先なので在庫管理外）
+  const stock = (ns.companyStock || {})[companyId] ?? Infinity
+  if (stock <= 0) return c.json({ success: false, error: 'この会社は売り切れです' })
+
   p.cash -= comp.cost
   p.companies.push(companyId)
-  // 購入はactionUsedを増やさない（何個でも購入可）
+  // 在庫を 1 減らす
+  if (ns.companyStock && ns.companyStock[companyId] !== undefined) {
+    ns.companyStock[companyId] -= 1
+  }
   recalcAssets(p, ns)
   ns.log = [`🏢 ${p.name}が「${comp.emoji}${comp.name}」を${comp.cost}円で購入！`, ...ns.log.slice(0,29)]
 
@@ -309,7 +355,7 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   p.cash -= comp.upgradeCost
   p.companies = p.companies.filter((id: string) => id !== companyId)
   p.companies.push(comp.upgradeTo)
-  // アップグレードは購入フェーズ中に行うのでactionUsedは増加しない
+  // アップグレードは既存の在庫枠をそのまま引き継ぐ（在庫変化なし）
   recalcAssets(p, ns)
   const newComp = COMPANIES.find(c => c.id === comp.upgradeTo)
   ns.log = [`⬆️ ${p.name}が「${comp.emoji}${comp.name}」を「${newComp?.emoji}${newComp?.name}」にアップグレード！`, ...ns.log.slice(0,29)]
@@ -329,11 +375,21 @@ gameRouter.post('/action/sell-company', async (c) => {
   if (!comp) return c.json({ success: false, error: '会社が見つかりません' })
   if (!p.companies.includes(companyId)) return c.json({ success: false, error: '所有していません' })
 
-  const sellPrice = comp.cost // 購入額を全額返却
+  const sellPrice = comp.cost
   p.cash += sellPrice
   p.companies = p.companies.filter((id: string) => id !== companyId)
+
+  // 売却時は在庫に 1 戻す
+  // アップグレード後（restaurant3 / railway）は元の会社（restaurant / bus）の在庫に戻す
+  const stockKey = companyId === 'restaurant3' ? 'restaurant'
+                 : companyId === 'railway'      ? 'bus'
+                 : companyId
+  if (ns.companyStock && ns.companyStock[stockKey] !== undefined) {
+    ns.companyStock[stockKey] += 1
+  }
+
   recalcAssets(p, ns)
-  ns.log = [`💸 ${p.name}が「${comp.emoji}${comp.name}」を${sellPrice}円で売却（購入額全額回収）`, ...ns.log.slice(0,29)]
+  ns.log = [`💸 ${p.name}が「${comp.emoji}${comp.name}」を${sellPrice}円で売却`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns })
 })
@@ -435,7 +491,20 @@ gameRouter.post('/action/buy-stock', async (c) => {
   const st = STOCKS.find(s => s.id === stockId)
   if (!st) return c.json({ success: false, error: '株が見つかりません' })
 
-  let price = st.buyPrice * (qty || 1)
+  const buyQty = qty || 1
+
+  // 株の在庫チェック：全プレイヤーの保有合計 + buyQty ≤ stockLimit
+  const limit = (ns.stockLimit || {})[stockId] ?? Infinity
+  const totalOwned = ns.players.reduce((sum: number, pl: any) => {
+    const h = pl.stocks.find((s: any) => s.id === stockId)
+    return sum + (h ? h.qty : 0)
+  }, 0)
+  if (totalOwned + buyQty > limit) {
+    const remaining = Math.max(0, limit - totalOwned)
+    return c.json({ success: false, error: `在庫が足りません（残り${remaining}株）` })
+  }
+
+  let price = st.buyPrice * buyQty
   if (ns.activeEventTypes.includes('stock_x2'))   price *= 2
   if (ns.activeEventTypes.includes('stock_half'))  price = Math.floor(price / 2)
 
@@ -444,14 +513,13 @@ gameRouter.post('/action/buy-stock', async (c) => {
   p.cash -= price
   const existing = p.stocks.find((s: any) => s.id === stockId)
   if (existing) {
-    existing.qty += (qty || 1)
+    existing.qty += buyQty
     existing.buyPrice = st.buyPrice
   } else {
-    p.stocks.push({ id: stockId, qty: qty || 1, buyPrice: st.buyPrice })
+    p.stocks.push({ id: stockId, qty: buyQty, buyPrice: st.buyPrice })
   }
-  // 購入はactionUsedを増やさない（何株・何個でも購入可）
   recalcAssets(p, ns)
-  ns.log = [`📈 ${p.name}が${st.emoji}${st.name}を${qty||1}株 ${price}円で購入！`, ...ns.log.slice(0,29)]
+  ns.log = [`📈 ${p.name}が${st.emoji}${st.name}を${buyQty}株 ${price}円で購入！`, ...ns.log.slice(0,29)]
 
   return c.json({ success: true, state: ns })
 })
