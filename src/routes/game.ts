@@ -170,7 +170,8 @@ gameRouter.post('/start', async (c) => {
     loans: [] as { toPlayerId: number, amount: number, yearlyInterest: number }[], // 貸付（金融機関持ちのみ）
     debts: [] as { fromPlayerId: number, amount: number, yearlyInterest: number }[], // 借入
     totalAssets: 600,
-    actionUsed: 0,       // 購入フェーズ完了フラグ（0=購入可、1=完了）
+    actionUsed: 0,       // アクション済みフラグ（0=未使用、1=使用済み）
+    diceRolled: false,   // このターンにサイコロを振ったか
     extraAction: false,  // バス/鉄道で追加行動付与済み
     extraTurn: false,    // 鉄道で再ターン付与済み
     skipTurn: false,
@@ -248,6 +249,7 @@ gameRouter.post('/action/work', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
   if (!canAct(p)) return c.json({ success: false, error: 'すでにアクション済みです' })
+  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   let earn = 100
   if (ns.activeEventTypes.includes('work_x3')) earn = 300
@@ -269,13 +271,13 @@ gameRouter.post('/action/deposit', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
   if (!canAct(p)) return c.json({ success: false, error: 'すでにアクション済みです' })
+  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
   if (!amount || amount <= 0) return c.json({ success: false, error: '金額を入力してください' })
   if (p.cash < amount) return c.json({ success: false, error: '現金が足りません（現金: '+p.cash+'円）' })
 
   p.cash -= amount
   p.atm  += amount
   p.actionUsed = 1
-  // ATMアクションはサイコロ不要（pendingRollsは変更しない）
   recalcAssets(p, ns)
   ns.log = [`🏧 ${p.name}がATMに${amount}円を預けた（残高: ${p.atm}円）`, ...ns.log.slice(0,29)]
 
@@ -290,6 +292,7 @@ gameRouter.post('/action/withdraw', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
   if (!canAct(p)) return c.json({ success: false, error: 'アクション済みです' })
+  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
   if (!amount || amount <= 0) return c.json({ success: false, error: '金額を入力してください' })
   if (p.atm < amount) return c.json({ success: false, error: 'ATM残高が足りません（ATM: '+p.atm+'円）' })
 
@@ -314,6 +317,7 @@ gameRouter.post('/action/buy-company', async (c) => {
   // アクション済みなら購入不可
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp) return c.json({ success: false, error: '会社が見つかりません' })
@@ -345,6 +349,7 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   const p = ns.players[ns.currentPlayer]
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp || !comp.upgradeTo) return c.json({ success: false, error: 'アップグレード不可' })
@@ -453,6 +458,7 @@ gameRouter.post('/action/roll-all', async (c) => {
   if (pendingShrineBonus) ns.pendingShrineBonus = pendingShrineBonus
 
   p.actionUsed = 1
+  p.diceRolled  = true   // このターンのサイコロ済みフラグ
   ns.pendingRolls = []
   ns.pendingRoll  = null
 
@@ -487,6 +493,7 @@ gameRouter.post('/action/buy-stock', async (c) => {
 
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   const st = STOCKS.find(s => s.id === stockId)
   if (!st) return c.json({ success: false, error: '株が見つかりません' })
@@ -609,6 +616,7 @@ gameRouter.post('/end-turn', async (c) => {
   const cp = ns.players[ns.currentPlayer]
   cp.actionUsed  = 0
   cp.extraAction = false
+  cp.diceRolled  = false  // サイコロ済みフラグをリセット
   ns.pendingRolls = []   // ロールキューをクリア
   ns.pendingRoll = null  // 後方互換
 
@@ -694,6 +702,10 @@ function processYearEnd(ns: any): any {
   ns.activeEventTypes = []
   ns.diceFixed = null
   ns.eventCard = null
+  // 全プレイヤーのサイコロ済みフラグをリセット
+  for (const p of ns.players) {
+    p.diceRolled = false
+  }
 
   // ゲーム終了判定
   if (nextYear > ns.maxYears) {
@@ -791,6 +803,19 @@ function processYearEnd(ns: any): any {
 function canAct(p: any): boolean {
   if (p.bankrupt) return false
   return p.actionUsed === 0   // 購入完了前のみ行動可
+}
+
+// サイコロを先に振る必要があるか
+// 会社（サイコロあり）or 株を持っていて、まだサイコロを振っていない場合 true
+function needsDiceFirst(p: any): boolean {
+  if (p.diceRolled) return false  // 既に振った
+  const hasRollable =
+    (p.companies || []).some((cid: string) => {
+      const c = COMPANIES.find(x => x.id === cid)
+      return c && c.rolls.length > 0 && c.id !== 'bank'
+    }) ||
+    (p.stocks || []).some((s: any) => s.qty > 0)
+  return hasRollable
 }
 
 // 購入フェーズ中かつサイコロ待ちが空か（購入可能判定）

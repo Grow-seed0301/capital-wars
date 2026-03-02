@@ -751,6 +751,33 @@ function renderActions(){
     return c && c.rolls.length > 0 && c.id !== 'bank'
   }) || cp.stocks.some(s=>s.qty>0)
 
+  // 会社・株を持っていてまだサイコロを振っていない → サイコロを強制
+  const needsDice = hasRollable && !cp.diceRolled
+
+  if(needsDice){
+    // サイコロ優先モード：他アクションはロック
+    const noticeDiv = document.createElement('div')
+    noticeDiv.className = 'col-span-2 text-center py-3 rounded-xl mb-2'
+    noticeDiv.style.cssText = 'background:rgba(255,150,0,0.15);border:2px solid #FF9800;'
+    noticeDiv.innerHTML = \`<div class="text-2xl mb-1">🎲</div>
+      <div class="font-bold text-orange-300">先にサイコロを振ってください！</div>
+      <div class="text-xs mt-1 opacity-70">はたらく・ATM・購入は<br>サイコロを振った後に使えます</div>\`
+    el.appendChild(noticeDiv)
+
+    const rollDiv = document.createElement('div')
+    rollDiv.className = 'action-item col-span-2'
+    rollDiv.style.cssText = 'border:2px solid #FF9800;background:rgba(255,150,0,0.15);'
+    rollDiv.innerHTML = \`<div class="text-2xl mb-1">🎲</div>
+      <div class="font-bold">サイコロを振る</div>
+      <div class="text-xs opacity-70">全会社・株の損益を一括取得</div>\`
+    rollDiv.addEventListener('click', showDicePanel)
+    el.appendChild(rollDiv)
+
+    // 売却ボタン（常に可）
+    if(cp.companies.length > 0) _appendSellSection(el, cp)
+    return
+  }
+
   const actions = [
     { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork },
     { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',   fn: showATMPanel },
@@ -758,7 +785,7 @@ function renderActions(){
     { icon:'📈', label:'株を買う',   sub:'何株でも購入可',      fn: ()=>switchTab('market') },
   ]
   if(hasRollable)
-    actions.push({ icon:'🎲', label:'サイコロ', sub:'全会社・株の損益を一括取得', fn: showDicePanel })
+    actions.push({ icon:'🎲', label:'サイコロ（再振り）', sub:'全会社・株の損益を一括取得', fn: showDicePanel })
   if(cp.companies.includes('bank'))
     actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel })
   if(cp.debts && cp.debts.length > 0)
@@ -971,7 +998,13 @@ function renderMarket(){
   const pendingRolls = G.pendingRolls || []
   const inRollPhase = pendingRolls.length > 0
   // 購入フェーズ（actionUsed=0）かつロールフェーズでない場合のみ購入可
-  const canAct = cp.actionUsed === 0 && !cp.isAI && !inRollPhase
+  // さらに：会社/株を持っていてサイコロ未振りの場合も購入不可
+  const hasRollableAssets = cp.companies.some(cid=>{
+    const c = G.companies.find(x=>x.id===cid)
+    return c && c.rolls.length > 0 && c.id !== 'bank'
+  }) || cp.stocks.some(s=>s.qty>0)
+  const diceLocked = hasRollableAssets && !cp.diceRolled
+  const canAct = cp.actionUsed === 0 && !cp.isAI && !inRollPhase && !diceLocked
   const el = document.getElementById('market-content')
   el.innerHTML = ''
 
@@ -983,6 +1016,18 @@ function renderMarket(){
       <div class="text-xs mt-1">アクションタブに戻ってサイコロを振ってください</div>
     </div>\`
     return
+  }
+
+  // サイコロ未振りロック：バナーを表示するが購入ボタンのみ無効（リストは見せる）
+  if(diceLocked){
+    const banner = document.createElement('div')
+    banner.className = 'text-center py-3 mb-3 rounded-xl'
+    banner.style.cssText = 'background:rgba(255,150,0,0.15);border:2px solid #FF9800;'
+    banner.innerHTML = \`<div class="text-xl mb-1">🎲</div>
+      <div class="font-bold text-orange-300">先にサイコロを振ってください！</div>
+      <div class="text-xs mt-1 opacity-70">購入はサイコロを振った後に可能です</div>
+      <button class="btn btn-warning mt-2" onclick="showDicePanel();switchTab('actions')">🎲 サイコロを振る</button>\`
+    el.appendChild(banner)
   }
 
   // ── 会社マーケット ──
