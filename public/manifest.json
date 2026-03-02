@@ -1,0 +1,18 @@
+{
+  "name": "Capital Wars — 資本戦争",
+  "short_name": "Capital Wars",
+  "description": "会社・株・ATMを駆使して最大の資産を築け！子どもから大人まで楽しめる資本主義ボードゲーム",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#6C63FF",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

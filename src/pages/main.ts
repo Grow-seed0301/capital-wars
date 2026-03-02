@@ -4,8 +4,31 @@ export function mainPage(): string {
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>⚔️ Capital Wars</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>⚔️ Capital Wars — 資本戦争ボードゲーム</title>
+<meta name="description" content="会社・株・ATMを駆使して最大の資産を築け！1〜10人で遊べる資本主義ボードゲーム。子どもから大人まで楽しみながらお金の仕組みが学べます。">
+<meta name="keywords" content="ボードゲーム,資本主義,投資,株,会社経営,教育ゲーム,Capital Wars">
+<meta name="author" content="Capital Wars">
+<meta name="robots" content="index, follow">
+<!-- OGP -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="⚔️ Capital Wars — 資本戦争ボードゲーム">
+<meta property="og:description" content="会社・株・ATMを駆使して最大の資産を築け！1〜10人で遊べる資本主義ボードゲーム。">
+<meta property="og:image" content="/ogp.png">
+<meta property="og:locale" content="ja_JP">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="⚔️ Capital Wars — 資本戦争ボードゲーム">
+<meta name="twitter:description" content="会社・株・ATMを駆使して最大の資産を築け！楽しみながらお金の仕組みが学べます。">
+<meta name="twitter:image" content="/ogp.png">
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6C63FF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Capital Wars">
+<link rel="apple-touch-icon" href="/favicon.svg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="https://cdn.tailwindcss.com">SCRIPT_END
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
