@@ -23,7 +23,8 @@ app.route('/api/game', gameRouter)
 
 // Main page
 app.get('/', (c) => {
-  return c.html(mainPage())
+  const html = mainPage().replace(/SCRIPT_END/g, '</script>')
+  return c.html(html)
 })
 
 export default app

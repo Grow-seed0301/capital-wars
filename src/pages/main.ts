@@ -1,4 +1,5 @@
 export function mainPage(): string {
+  const ST = '<' + '/script>'
   return /* html */`<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,7 +7,7 @@ export function mainPage(): string {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>⚔️ Capital Wars</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com">SCRIPT_END
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <style>
 :root{
@@ -1121,7 +1122,7 @@ function renderRanking(){
 }
 
 // 破産通知オーバーレイ
-function showBankruptNotice(playerName: string){
+function showBankruptNotice(playerName){
   const overlay = document.createElement('div')
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);'
   overlay.innerHTML = \`
@@ -1867,7 +1868,7 @@ function setActionMsg(msg){
 // ============================================================
 // Pre-select defaults
 selectGameLength(10)
-</script>
+SCRIPT_END
 </body>
 </html>`
 }
