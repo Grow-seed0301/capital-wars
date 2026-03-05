@@ -1348,6 +1348,27 @@ function renderLog(){
 // ============================================================
 // Actions
 // ============================================================
+
+// クライアント専用フラグをサーバーレスポンスに引き継ぐ
+// （G = data.state でサーバーが知らないフラグが消えないよう保護）
+// ただし新しい年のイベントカード（IDが変わった）場合はフラグをリセット
+const CLIENT_FLAGS = ['_eventShown','_eventDrawnBy','_eventNotified'] as const
+function mergeClientState(newState: any): any {
+  if(!G) return newState  // 初回はそのまま返す
+  // 年が変わった or イベントカードIDが変わった → フラグリセット
+  const sameEvent = G.eventCard && newState.eventCard &&
+                    G.eventCard.id === newState.eventCard.id
+  const sameYear  = G.year === newState.year
+  if(sameEvent && sameYear){
+    // 同じ年の同じイベント中 → フラグを引き継ぐ
+    for(const key of CLIENT_FLAGS){
+      if(G[key] !== undefined) newState[key] = G[key]
+    }
+  }
+  // 年またぎ or イベントなし → フラグはリセット（newState にはないので自動的にクリア）
+  return newState
+}
+
 async function apiPost(endpoint, body){
   if(processingAction) return null
   processingAction = true
@@ -1367,7 +1388,7 @@ async function doWork(){
   const data = await apiPost('/action/work',{state:G})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   renderGame()
   spawnCoins(3)
   showToast('💼 はたらいた！','info')
@@ -1387,7 +1408,7 @@ async function doDeposit(){
   const data = await apiPost('/action/deposit',{state:G, amount:amt})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   document.getElementById('atmAmount').value=''
   document.getElementById('atm-panel').classList.add('hidden')
   renderGame()
@@ -1400,7 +1421,7 @@ async function doWithdraw(){
   const data = await apiPost('/action/withdraw',{state:G, amount:amt})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   document.getElementById('atmAmount').value=''
   document.getElementById('atm-panel').classList.add('hidden')
   renderGame()
@@ -1422,7 +1443,7 @@ async function doBuyCompany(companyId){
       const data = await apiPost('/action/buy-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
-      G = data.state
+      G = mergeClientState(data.state)
       spawnCoins(5)
       showToast('\ud83c\udfe2 '+comp.name+'\u3092\u8cfc\u5165\uff01','info')
       renderGame()
@@ -1441,7 +1462,7 @@ async function doUpgradeCompany(companyId){
       const data = await apiPost('/action/upgrade-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
-      G = data.state
+      G = mergeClientState(data.state)
       renderGame()
       spawnCoins(8)
       showToast('⬆️ アップグレード！','info')
@@ -1461,7 +1482,7 @@ async function doSellCompany(companyId){
       const data = await apiPost('/action/sell-company',{state:G, companyId})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
-      G = data.state
+      G = mergeClientState(data.state)
       renderGame()
       spawnCoins(4)
       showToast('💸 '+comp.name+'を売却！'+fmt(sellPrice)+'回収','info')
@@ -1490,7 +1511,7 @@ async function doBuyStock(stockId){
       const data = await apiPost('/action/buy-stock',{state:G, stockId, qty:1})
       if(!data) return
       if(!data.success){ showToast(data.error,'error'); return }
-      G = data.state
+      G = mergeClientState(data.state)
       spawnCoins(4)
       showToast('\ud83d\udcc8 '+st.name+'\u3092\u8cfc\u5165\uff01','info')
       renderGame()
@@ -1503,7 +1524,7 @@ async function doFinishPurchase(){
   const data = await apiPost('/action/finish-purchase',{state:G})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   renderGame()
   const pendingRolls = G.pendingRolls || []
   if(pendingRolls.length > 0){
@@ -1708,7 +1729,7 @@ async function doShrineCollect(targetPlayerId){
   const data = await apiPost('/action/shrine-collect',{state:G, targetPlayerId})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   document.getElementById('media-overlay').classList.remove('show')
   renderGame()
   spawnCoins(5)
@@ -1732,7 +1753,7 @@ async function doLend(){
   const data = await apiPost('/action/lend',{state:G, toPlayerId, amount})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   hideLendPanel()
   renderGame()
   showToast('🏦 融資した！','info')
@@ -1761,7 +1782,7 @@ async function doRepay(fromPlayerId){
   const data = await apiPost('/action/repay',{state:G, fromPlayerId, amount})
   if(!data) return
   if(!data.success){ showToast(data.error,'error'); return }
-  G = data.state
+  G = mergeClientState(data.state)
   hideRepayPanel()
   renderGame()
   showToast('💳 返済した！','info')
@@ -1781,7 +1802,7 @@ async function doEndTurn(){
     })
     const data = await res.json()
     if(!data.success){ showToast(data.error||'エラー','error'); return }
-    G = data.state
+    G = mergeClientState(data.state)
 
     // Game over?
     if(G.gameOver || G.phase==='result'){
@@ -1928,7 +1949,7 @@ async function handleBankruptcy(){
       body:JSON.stringify({state:G, companyId:cid})
     })
     const d = await res.json()
-    if(d.success) G = d.state
+    if(d.success) G = mergeClientState(d.state)
   }
   afterBankruptcy()
 }
