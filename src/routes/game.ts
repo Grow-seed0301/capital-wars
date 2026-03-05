@@ -810,14 +810,16 @@ function processYearEnd(ns: any): any {
       // 倒産は別途UIで処理
     } else if (card.type === 'charity') {
       // 資産最少プレイヤーに1000円ずつ渡す
-      const poorest = [...ns.players].sort((a: any, b: any) => a.totalAssets - b.totalAssets)[0]
+      const poorest = ns.players.reduce((min: any, p: any) => p.totalAssets < min.totalAssets ? p : min, ns.players[0])
       for (const p of ns.players) {
-        if (p.id !== poorest.id) {
+        if (p.id !== poorest.id && !p.bankrupt) {
           const give = Math.min(1000, p.cash)
           p.cash -= give
           poorest.cash += give
+          recalcAssets(p, ns)
         }
       }
+      recalcAssets(poorest, ns)
       ns.log = [`🤝 ${poorest.name}に全員が1000円ずつ渡した！`, ...ns.log.slice(0,29)]
     } else if (['dice_even','dice_odd'].includes(card.type)) {
       ns.diceFixed = card.type === 'dice_even' ? 'even' : 'odd'
