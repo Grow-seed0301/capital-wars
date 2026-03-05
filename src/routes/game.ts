@@ -408,7 +408,8 @@ gameRouter.post('/action/roll-all', async (c) => {
   const p = ns.players[ns.currentPlayer]
 
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
-  if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです' })
+  if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+  // actionUsedチェックは不要（サイコロはアクション消費前に振れる）
 
   let totalEffect = 0
   const results: { name: string, emoji: string, label: string, effect: number, bonus?: string }[] = []
@@ -457,8 +458,9 @@ gameRouter.post('/action/roll-all', async (c) => {
   p.extraTurn   = extraTurn
   if (pendingShrineBonus) ns.pendingShrineBonus = pendingShrineBonus
 
-  p.actionUsed = 1
-  p.diceRolled  = true   // このターンのサイコロ済みフラグ
+  // サイコロは「前処理」なのでアクション消費しない
+  // → diceRolledをtrueにするだけ。actionUsedはこの後の行動で消費する
+  p.diceRolled  = true
   ns.pendingRolls = []
   ns.pendingRoll  = null
 

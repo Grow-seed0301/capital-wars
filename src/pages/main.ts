@@ -779,7 +779,7 @@ function renderActions(){
 
   // ── アクション済み ──
   if(cp.actionUsed >= 1){
-    // サイコロ結果を持っている場合はメディア対象選択を促す
+    // メディア広告費の対象選択待ち
     if(G.pendingShrineBonus){
       el.innerHTML = \`
         <div class="col-span-2 text-center py-3 rounded-xl" style="background:rgba(255,150,0,0.2);border:2px solid #FF9800;">
@@ -801,14 +801,14 @@ function renderActions(){
   }
 
   // ── アクション未使用：行動選択 ──
-  // ── サイコロ対象あり判定 ──
+  // サイコロ対象あり判定
   const hasRollable = cp.companies.some(cid=>{
     const c = G.companies.find(x=>x.id===cid)
     return c && c.rolls.length > 0 && c.id !== 'bank'
   }) || cp.stocks.some(s=>s.qty>0)
 
   // ═══════════════════════════════════════════════════════
-  // ステップ1: サイコロ未振り かつ 振るべき資産あり
+  // ステップ1: サイコロ未振り かつ 振るべき資産あり（2年目以降）
   //   → サイコロボタンのみ表示。他アクションは一切非表示
   // ═══════════════════════════════════════════════════════
   // 1年目はターン開始時に資産がないため強制サイコロは2年目以降のみ
