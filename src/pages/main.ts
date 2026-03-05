@@ -1085,6 +1085,15 @@ function renderMarket(){
   const el = document.getElementById('market-content')
   el.innerHTML = ''
 
+  // アクション済みの場合はターン終了バナーを最上部に表示
+  if(cp.actionUsed >= 1 && !cp.isAI){
+    const doneBanner = document.createElement('div')
+    doneBanner.className = 'rounded-2xl p-4 mb-4 flex items-center justify-between gap-3'
+    doneBanner.style.cssText = 'background:linear-gradient(135deg,rgba(76,175,80,.2),rgba(76,175,80,.05));border:2px solid #4CAF50;'
+    doneBanner.innerHTML = '<div class="flex items-center gap-2"><span class="text-2xl">\u2705</span><div><div class="font-black text-green-300">\u30a2\u30af\u30b7\u30e7\u30f3\u5b8c\u4e86\uff01</div><div class="text-xs opacity-60 mt-0.5">\u30bf\u30fc\u30f3\u3092\u7d42\u4e86\u3057\u3066\u6b21\u3078</div></div></div><button class="btn btn-success" onclick="doEndTurn()">\u30bf\u30fc\u30f3\u7d42\u4e86 \u2192</button>'
+    el.appendChild(doneBanner)
+  }
+
   // ロールフェーズ中はマーケット全体をロック表示
   if(inRollPhase){
     el.innerHTML = \`<div class="text-center py-6 opacity-60">
@@ -1227,61 +1236,63 @@ function renderMarket(){
   })
   el.appendChild(stGrid)
 
-  // ── サイコロアクション（保有済み会社・株のロール）──
-  const diceTitle = document.createElement('h3')
-  diceTitle.className = 'font-bold mt-4 mb-2'
-  diceTitle.textContent = '\ud83c\udfb2 \u30b5\u30a4\u30b3\u30ed\u30a2\u30af\u30b7\u30e7\u30f3'
-  el.appendChild(diceTitle)
-
-  const diceList = document.createElement('div')
-  diceList.className = 'space-y-2'
-
-  let hasRollable = false
-
-  cp.companies.forEach(cid=>{
-    const comp = G.companies.find(x=>x.id===cid)
-    if(!comp || comp.rolls.length===0 || comp.id==='bank') return
-    hasRollable = true
-    const card = document.createElement('div')
-    card.className = 'item-card owned'
-    card.innerHTML = \`
-      \${comp.emoji} <span class="font-bold">\${comp.name}</span>
-      <div class="text-xs opacity-70">\${comp.rolls.map(r=>r.range[0]+'-'+r.range[1]+': '+r.label).join(' / ')}</div>
-    \`
-    diceList.appendChild(card)
-  })
-
-  cp.stocks.forEach(s=>{
-    if(s.qty===0) return
-    const st = G.stocks.find(x=>x.id===s.id)
-    if(!st) return
-    hasRollable = true
-    const card = document.createElement('div')
-    card.className = 'item-card owned'
-    card.innerHTML = \`
-      \${st.emoji} <span class="font-bold">\${st.name}</span>（\${s.qty}株）
-      <div class="text-xs opacity-70">\u5076\u6570: +\${yen(st.rolls[0].effect*s.qty)}\u5186 / \u5947\u6570: \${yen(st.rolls[1].effect*s.qty)}\u5186</div>
-    \`
-    diceList.appendChild(card)
-  })
-
-  if(!hasRollable){
-    const empty = document.createElement('div')
-    empty.className = 'text-sm opacity-50'
-    empty.textContent = '\u4f1a\u793e\u30fb\u682a\u3092\u8cfc\u5165\u3059\u308b\u3068\u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308c\u307e\u3059'
-    diceList.appendChild(empty)
-  } else if(canAct){
-    // \u307e\u3068\u3081\u3066\u30b5\u30a4\u30b3\u30edボタン
-    const rollAllBtn = document.createElement('button')
-    rollAllBtn.className = 'btn btn-warning w-full mt-2'
-    rollAllBtn.innerHTML = '\ud83c\udfb2 \u307e\u3068\u3081\u3066\u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308b\uff01(\u5168\u4f1a\u793e\u30fb\u682a\u306e\u640d\u76ca\u3092\u4e00\u62ec\u53d6\u5f97)'
-    rollAllBtn.addEventListener('click', ()=>{
-      showDicePanel()
-      switchTab('actions')
+  if(G.year > 1){
+    // ── サイコロアクション（保有済み会社・株のロール）──
+    const diceTitle = document.createElement('h3')
+    diceTitle.className = 'font-bold mt-4 mb-2'
+    diceTitle.textContent = '\ud83c\udfb2 \u30b5\u30a4\u30b3\u30ed\u30a2\u30af\u30b7\u30e7\u30f3'
+    el.appendChild(diceTitle)
+  
+    const diceList = document.createElement('div')
+    diceList.className = 'space-y-2'
+  
+    let hasRollable = false
+  
+    cp.companies.forEach(cid=>{
+      const comp = G.companies.find(x=>x.id===cid)
+      if(!comp || comp.rolls.length===0 || comp.id==='bank') return
+      hasRollable = true
+      const card = document.createElement('div')
+      card.className = 'item-card owned'
+      card.innerHTML = \`
+        \${comp.emoji} <span class="font-bold">\${comp.name}</span>
+        <div class="text-xs opacity-70">\${comp.rolls.map(r=>r.range[0]+'-'+r.range[1]+': '+r.label).join(' / ')}</div>
+      \`
+      diceList.appendChild(card)
     })
-    diceList.appendChild(rollAllBtn)
+  
+    cp.stocks.forEach(s=>{
+      if(s.qty===0) return
+      const st = G.stocks.find(x=>x.id===s.id)
+      if(!st) return
+      hasRollable = true
+      const card = document.createElement('div')
+      card.className = 'item-card owned'
+      card.innerHTML = \`
+        \${st.emoji} <span class="font-bold">\${st.name}</span>（\${s.qty}株）
+        <div class="text-xs opacity-70">\u5076\u6570: +\${yen(st.rolls[0].effect*s.qty)}\u5186 / \u5947\u6570: \${yen(st.rolls[1].effect*s.qty)}\u5186</div>
+      \`
+      diceList.appendChild(card)
+    })
+  
+    if(!hasRollable){
+      const empty = document.createElement('div')
+      empty.className = 'text-sm opacity-50'
+      empty.textContent = '\u4f1a\u793e\u30fb\u682a\u3092\u8cfc\u5165\u3059\u308b\u3068\u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308c\u307e\u3059'
+      diceList.appendChild(empty)
+    } else if(canAct){
+      // \u307e\u3068\u3081\u3066\u30b5\u30a4\u30b3\u30edボタン
+      const rollAllBtn = document.createElement('button')
+      rollAllBtn.className = 'btn btn-warning w-full mt-2'
+      rollAllBtn.innerHTML = '\ud83c\udfb2 \u307e\u3068\u3081\u3066\u30b5\u30a4\u30b3\u30ed\u3092\u632f\u308b\uff01(\u5168\u4f1a\u793e\u30fb\u682a\u306e\u640d\u76ca\u3092\u4e00\u62ec\u53d6\u5f97)'
+      rollAllBtn.addEventListener('click', ()=>{
+        showDicePanel()
+        switchTab('actions')
+      })
+      diceList.appendChild(rollAllBtn)
+    }
+    el.appendChild(diceList)
   }
-  el.appendChild(diceList)
 }
 
 function renderRanking(){
