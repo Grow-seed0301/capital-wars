@@ -417,18 +417,20 @@ body{
   <div id="event-draw-area">
     <div class="event-year-label" id="eventYearLabel">📅 2年目スタート</div>
     <div class="event-drawer-name" id="eventDrawerName">山田 がカードを引きます</div>
+    <div style="font-size:.8rem;opacity:.6;margin-bottom:1.2rem;text-align:center;">全員で画面を囲んでください</div>
     <button class="event-draw-btn" onclick="doDrawEventCard()">
       🎴 イベントカードを引く！
     </button>
   </div>
   <!-- フェーズB: カード内容 (最初は hidden) -->
   <div class="event-card-big hidden" id="event-card-reveal">
-    <div class="text-xs font-bold mb-3 opacity-60 tracking-widest">📢 今年のイベント</div>
+    <!-- モードによって変わるサブタイトル -->
+    <div class="text-xs font-bold mb-3 tracking-widest" id="eventRevealLabel" style="opacity:.6;">📢 今年のイベント</div>
     <div class="text-7xl mb-4" id="eventEmoji" style="animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both;">🎴</div>
     <div class="text-2xl font-black mb-3" id="eventName">イベント</div>
-    <div class="text-sm opacity-80 mb-6" id="eventDesc"></div>
-    <div class="text-xs opacity-50 mb-5" id="eventAffect"></div>
-    <button class="btn btn-warning w-full" onclick="dismissEvent()">
+    <div class="text-sm opacity-80 mb-4" id="eventDesc"></div>
+    <div class="text-sm font-bold mb-6" id="eventAffect" style="color:var(--c3);background:rgba(255,209,102,.1);padding:.6rem 1rem;border-radius:.6rem;"></div>
+    <button class="btn btn-warning w-full" id="eventDismissBtn" onclick="dismissEvent()">
       <i class="fas fa-check"></i> わかった！ゲームを続ける
     </button>
   </div>
@@ -1788,8 +1790,11 @@ async function doEndTurn(){
     }
 
     // Event card?
+    // _eventShown = false: まだ1位が引いていない → 引くボタン表示
     if(G.eventCard && !G._eventShown){
       G._eventShown = true
+      // 1位プレイヤーのIDを記録（引いた本人には告知不要）
+      G._eventDrawnBy = G.turnOrder[0]
       showEventCard(G.eventCard)
       return
     }
@@ -1802,8 +1807,7 @@ async function doEndTurn(){
 
     // Handoff?
     if(G.needsHandoff){
-      const nextP = G.players[G.handoffTo]
-      showHandoff(nextP)
+      afterEventHandoff()
     } else {
       renderGame()
       // AI auto-play
@@ -1817,48 +1821,64 @@ async function doEndTurn(){
 }
 
 // ============================================================
-// Event Card  ─ 2段階表示（ボタン → カード内容 → 全員OK）
+// Event Card  ─ 3パターン表示
+//   A) 1位が引く前  → 「カードを引く！」ボタン
+//   B) 1位が引いた後（1位自身が見る） → カード内容 → わかった → ハンドオフ
+//   C) 2位以降のプレイヤー → 「今年のイベントはこれ！」告知 → わかった → ハンドオフ
 // ============================================================
+
+// イベントの影響テキスト共通マップ
+const EVENT_AFFECT_MAP = {
+  company_profit_x2: '\ud83d\udce2 \u5168\u30d7\u30ec\u30a4\u30e4\u30fc\u306e\u4f1a\u793e\u53ce\u76ca\u304c2\u500d\u306b\u306a\u308a\u307e\u3059',
+  company_loss_x2:   '\ud83d\udce2 \u5168\u30d7\u30ec\u30a4\u30e4\u30fc\u306e\u4f1a\u793e\u640d\u5931\u304c2\u500d\u306b\u306a\u308a\u307e\u3059',
+  work_x3:           '\ud83d\udce2 \u5168\u30d7\u30ec\u30a4\u30e4\u30fc\u306e\u306f\u305f\u3089\u304f\u5831\u916c\u304c3\u500d\u306b\u306a\u308a\u307e\u3059',
+  stock_x2:          '\ud83d\udce2 \u5168\u30d7\u30ec\u30a4\u30e4\u30fc\u306e\u682a\u306e\u640d\u76ca\u304c2\u500d\u306b\u306a\u308a\u307e\u3059',
+  stock_half:        '\ud83d\udce2 \u5168\u30d7\u30ec\u30a4\u30e4\u30fc\u306e\u682a\u306e\u640d\u76ca\u304c\u534a\u5206\u306b\u306a\u308a\u307e\u3059',
+  bankruptcy:        '\u26a0\ufe0f \u30bf\u30fc\u30f31\u4f4d\u306e\u30d7\u30ec\u30a4\u30e4\u30fc\u304c\u4f1a\u793e\u3092\u5168\u3066\u58f2\u5374\u3057\u307e\u3059',
+  interest_x2:       '\ud83d\udce2 \u5168\u30d7\u30ec\u30a4\u30e4\u30fc\u306eATM\u5229\u606f\u304c2\u500d\u306b\u306a\u308a\u307e\u3059\uff08\u5e74\u672b\uff09',
+  dice_even:         '\ud83d\udce2 \u3053\u306e\u5e74\u306f\u30b5\u30a4\u30b3\u30ed\u304c\u5fc5\u305a\u5076\u6570\u306b\u306a\u308a\u307e\u3059',
+  dice_odd:          '\ud83d\udce2 \u3053\u306e\u5e74\u306f\u30b5\u30a4\u30b3\u30ed\u304c\u5fc5\u305a\u5947\u6570\u306b\u306a\u308a\u307e\u3059',
+  charity:           '\ud83d\udce2 \u5168\u54e1\u304c1000\u5186\u3092\u6700\u3082\u8ca7\u3057\u3044\u30d7\u30ec\u30a4\u30e4\u30fc\u306b\u6e21\u3057\u307e\u3059',
+}
+
+// パターンA: 1位プレイヤーが「カードを引く」ボタンを押す画面
 function showEventCard(card){
-  // フェーズA: カードを引くボタン表示
-  const drawer = G.players[G.turnOrder[0]]  // 引くのはターン1位
+  const drawer = G.players[G.turnOrder[0]]
   document.getElementById('eventYearLabel').textContent  = G.year+'\u5e74\u76ee\u30b9\u30bf\u30fc\u30c8\uff01'
-  document.getElementById('eventDrawerName').textContent = drawer.name+'\u304c\u30ab\u30fc\u30c9\u3092\u5f15\u304d\u307e\u3059'
+  document.getElementById('eventDrawerName').textContent = drawer.name+'\u304c\u30a4\u30d9\u30f3\u30c8\u30ab\u30fc\u30c9\u3092\u5f15\u304d\u307e\u3059'
   document.getElementById('event-draw-area').classList.remove('hidden')
   document.getElementById('event-card-reveal').classList.add('hidden')
   document.getElementById('event-overlay').classList.add('show')
 }
 
+// パターンA → B: 「カードを引く！」ボタンを押したとき
 function doDrawEventCard(){
-  // フェーズB: カード内容を表示
   const card = G.eventCard
   if(!card) return
+  _showEventReveal(card, '🎴 イベント発生！', 'わかった！ゲームを続ける')
+}
+
+// パターンC: 2位以降プレイヤーへの告知画面
+function showEventNotice(card, player){
+  // 「〇〇のターン前に全員が確認する告知」
+  _showEventReveal(card, '📢 今年のイベント（'+player.name+'のターン前に確認）', '確認した！'+player.name+'のターンへ')
+}
+
+// カード内容を表示する共通関数（ラベルとボタンテキストを切り替え）
+function _showEventReveal(card, label, btnText){
+  document.getElementById('eventRevealLabel').textContent = label
   document.getElementById('eventEmoji').textContent = card.emoji
   document.getElementById('eventName').textContent  = card.name
   document.getElementById('eventDesc').textContent  = card.desc
-
-  // 影響の説明を追加
-  const affectMap = {
-    company_profit_x2: '📢 全プレイヤーの会社収益が2倍になります',
-    company_loss_x2:   '📢 全プレイヤーの会社損失が2倍になります',
-    work_x3:           '📢 全プレイヤーのはたらく報酬が3倍になります',
-    stock_x2:          '📢 全プレイヤーの株の損益が2倍になります',
-    stock_half:        '📢 全プレイヤーの株の損益が半分になります',
-    bankruptcy:        '⚠️ ターン1位のプレイヤーが会社を全て売却します',
-    interest_x2:       '📢 全プレイヤーのATM利息が2倍になります（年末）',
-    dice_even:         '📢 この年はサイコロが必ず偶数になります',
-    dice_odd:          '📢 この年はサイコロが必ず奇数になります',
-    charity:           '📢 全員が1000円を最も貧しいプレイヤーに渡します',
-  }
-  document.getElementById('eventAffect').textContent = affectMap[card.type] || ''
-
+  document.getElementById('eventAffect').textContent = EVENT_AFFECT_MAP[card.type] || ''
+  document.getElementById('eventDismissBtn').textContent = '\u2714 '+btnText
   document.getElementById('event-draw-area').classList.add('hidden')
   document.getElementById('event-card-reveal').classList.remove('hidden')
+  document.getElementById('event-overlay').classList.add('show')
 }
 
 function dismissEvent(){
   document.getElementById('event-overlay').classList.remove('show')
-  G._eventShown = false
 
   if(G.eventCard && G.eventCard.type === 'bankruptcy'){
     handleBankruptcy()
@@ -1866,14 +1886,29 @@ function dismissEvent(){
   }
 
   if(G.needsHandoff){
-    const nextP = G.players[G.handoffTo]
-    showHandoff(nextP)
+    afterEventHandoff()
   } else {
     renderGame()
     if(G.players[G.currentPlayer].isAI){
       setTimeout(doAITurn, 800)
     }
   }
+}
+
+// ハンドオフ時にイベント告知が必要かチェックして進める共通関数
+function afterEventHandoff(){
+  const nextP = G.players[G.handoffTo]
+  // イベントカードがあり、かつ nextP が引いた本人でなく、まだ未告知なら告知を挟む
+  if(G.eventCard && G._eventShown){
+    if(!G._eventNotified) G._eventNotified = []
+    const isDrawer = nextP.id === G._eventDrawnBy
+    if(!isDrawer && !G._eventNotified.includes(nextP.id)){
+      G._eventNotified.push(nextP.id)
+      showEventNotice(G.eventCard, nextP)
+      return
+    }
+  }
+  showHandoff(nextP)
 }
 
 async function handleBankruptcy(){
@@ -1900,7 +1935,7 @@ async function handleBankruptcy(){
 
 function afterBankruptcy(){
   if(G.needsHandoff){
-    showHandoff(G.players[G.handoffTo])
+    afterEventHandoff()
   } else {
     renderGame()
   }
