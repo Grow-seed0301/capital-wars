@@ -2337,7 +2337,7 @@ async function doAITurn(){
       return c && c.rolls.length > 0 && c.id !== 'bank'
     }) || cp.stocks.some(s=>s.qty>0)
 
-    if(hasRollable && !cp.diceRolled && cp.actionUsed === 0){
+    if(hasRollable && !cp.diceRolled){
       // サイコロを取得
       const diceRes = await fetch('/api/game/roll-dice',{
         method:'POST',
@@ -2384,10 +2384,12 @@ async function doAITurn(){
     }
 
     // ── Step 2: 購入・ATM・はたらく（サイコロ後に実行） ──
-    // 現プレイヤーを最新状態に更新
-    const p = G.players[G.currentPlayer]
+    // 現プレイヤーを最新状態に更新（extraAction時は2回アクション実行）
+    const doAIAction = async () => {
+      const p = G.players[G.currentPlayer]
+      const maxAct = p.extraAction ? 2 : 1
+      if(p.actionUsed >= maxAct) return
 
-    if(p.actionUsed === 0){
       // 購入判断: 安い会社から買う（在庫あり・未所有・現金足りる）
       const companyStock = G.companyStock || {}
       const affordable = G.companies
@@ -2455,6 +2457,14 @@ async function doAITurn(){
           if(d.success){ G=mergeClientState(d.state); await delay(400) }
         }
       }
+    }
+
+    // 1回目アクション
+    await doAIAction()
+    // extraAction(バス/鉄道ボーナス)がある場合は2回目アクション
+    if(G.players[G.currentPlayer].extraAction && G.players[G.currentPlayer].actionUsed < 2){
+      await delay(300)
+      await doAIAction()
     }
 
     renderGame()

@@ -212,8 +212,9 @@ gameRouter.post('/start', async (c) => {
     stockLimit:   calcStockLimit(playerCount)   as Record<string, number>,
   }
 
-  // 初回ターン順をセット（全員ATM=0なのでそのまま）
-  state.turnOrder = buildTurnOrder(state.players)
+  // ⑬初回ターン順をランダムに決定
+  state.turnOrder = shuffleArray(players.map((_: any, i: number) => i))
+  state.currentTurnIdx = 0
   state.currentPlayer = state.turnOrder[0]
 
   return c.json({ success: true, state })
@@ -234,9 +235,17 @@ gameRouter.post('/roll-dice', async (c) => {
   const { state } = await c.req.json()
   let dice = Math.floor(Math.random() * 6) + 1
 
-  // イベント固定
-  if (state.diceFixed === 'even' && dice % 2 !== 0) dice = dice === 6 ? 2 : dice + 1
-  if (state.diceFixed === 'odd'  && dice % 2 === 0) dice = dice === 1 ? 3 : dice - 1
+  // イベント固定（⑪偏りのない補正：再ロール方式）
+  if (state.diceFixed === 'even' && dice % 2 !== 0) {
+    // 奇数が出たら偶数リスト[2,4,6]からランダム選択
+    const evens = [2, 4, 6]
+    dice = evens[Math.floor(Math.random() * evens.length)]
+  }
+  if (state.diceFixed === 'odd' && dice % 2 === 0) {
+    // 偶数が出たら奇数リスト[1,3,5]からランダム選択
+    const odds = [1, 3, 5]
+    dice = odds[Math.floor(Math.random() * odds.length)]
+  }
 
   return c.json({ success: true, dice })
 })
@@ -359,7 +368,11 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   p.cash -= comp.upgradeCost
   p.companies = p.companies.filter((id: string) => id !== companyId)
   p.companies.push(comp.upgradeTo)
-  // アップグレードは既存の在庫枠をそのまま引き継ぐ（在庫変化なし）
+  // ④アップグレード時：元の会社在庫-1、アップグレード先在庫+1
+  if (ns.companyStock) {
+    if (ns.companyStock[companyId] !== undefined) ns.companyStock[companyId] -= 1
+    if (ns.companyStock[comp.upgradeTo] !== undefined) ns.companyStock[comp.upgradeTo] += 1
+  }
   p.actionUsed += 1
   recalcAssets(p, ns)
   const newComp = COMPANIES.find(c => c.id === comp.upgradeTo)
@@ -501,14 +514,18 @@ gameRouter.post('/action/sell-stock', async (c) => {
   if (!holding || holding.qty === 0) return c.json({ success: false, error: 'その株を持っていません' })
 
   const sellQty = Math.min(qty || 1, holding.qty)
-  let price = st.buyPrice * sellQty
-  // イベントによる売値変動
-  if (ns.activeEventTypes.includes('stock_x2'))   price *= 2
-  if (ns.activeEventTypes.includes('stock_half'))  price = Math.floor(price / 2)
+  // ⑭株売却価格はイベント影響なし（買値固定）
+  const price = st.buyPrice * sellQty
 
   p.cash += price
   holding.qty -= sellQty
   if (holding.qty === 0) p.stocks = p.stocks.filter((s: any) => s.id !== stockId)
+
+  // ⑥株売却時は stockLimit を増やして在庫を戻す
+  if (ns.stockLimit && ns.stockLimit[stockId] !== undefined) {
+    // stockLimitは最大値なので変更不要（プレイヤー保有合計で管理）
+    // 売却で自動的に totalOwned が減るため在庫チェックは正しく動作する
+  }
 
   recalcAssets(p, ns)
   ns.log = [`📉 ${p.name}が${st.emoji}${st.name}を${sellQty}株 ${price}円で売却！`, ...ns.log.slice(0,29)]
@@ -574,6 +591,7 @@ gameRouter.post('/action/lend', async (c) => {
   if (!p.companies.includes('bank'))
     return c.json({ success: false, error: '金融機関を所有していません' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+  if (!canAct(p)) return c.json({ success: false, error: 'すでにアクション済みです' })
   if (p.cash < amount)
     return c.json({ success: false, error: '現金が足りません' })
 
@@ -581,10 +599,14 @@ gameRouter.post('/action/lend', async (c) => {
   const yearlyInterest = amount <= 2500 ? 500 : 1000
 
   p.cash -= amount
+  // ⑩融資はアクション消費
+  p.actionUsed += 1
   p.loans.push({ toPlayerId, amount, yearlyInterest })
   target.cash += amount
   target.debts.push({ fromPlayerId: ns.currentPlayer, amount, yearlyInterest })
 
+  recalcAssets(p, ns)
+  recalcAssets(target, ns)
   ns.log = [`🏦 ${p.name}が${target.name}に${amount}円融資（年利${yearlyInterest}円）`, ...ns.log.slice(0,29)]
   return c.json({ success: true, state: ns })
 })
@@ -610,6 +632,8 @@ gameRouter.post('/action/repay', async (c) => {
   if (loan) loan.amount -= repay
   if (debt.amount <= 0) p.debts = p.debts.filter((d: any) => d.fromPlayerId !== fromPlayerId)
 
+  recalcAssets(p, ns)
+  recalcAssets(lender, ns)
   ns.log = [`💳 ${p.name}が${lender.name}に${repay}円返済`, ...ns.log.slice(0,29)]
   return c.json({ success: true, state: ns })
 })
@@ -626,6 +650,11 @@ gameRouter.post('/action/shrine-collect', async (c) => {
   const owner  = ns.players[ownerId]
   const target = ns.players[targetPlayerId]
 
+  // ②破産者からは徴収しない
+  if (target.bankrupt) {
+    ns.pendingShrineBonus = null
+    return c.json({ success: true, state: ns })
+  }
   const actual = Math.min(amount, target.cash)
   target.cash -= actual
   owner.cash  += actual
@@ -699,7 +728,7 @@ gameRouter.post('/end-turn', async (c) => {
 // 年末処理
 // ============================================================
 function processYearEnd(ns: any): any {
-  // ATM利息（破産者除く）
+  // ⑤ATM利息（2年目以降・破産者除く）
   let interestMultiplier = ns.activeEventTypes.includes('interest_x2') ? 2 : 1
   for (const p of ns.players) {
     if (p.bankrupt) continue
@@ -710,16 +739,16 @@ function processYearEnd(ns: any): any {
     }
   }
 
-  // 融資の利息処理
+  // 融資の利息処理（③貸主側もrecalcAssets）
   for (const p of ns.players) {
     if (p.bankrupt) continue
     for (const debt of p.debts) {
       const interest = debt.yearlyInterest
+      const lender = ns.players[debt.fromPlayerId]
       if (p.cash >= interest) {
         p.cash -= interest
-        ns.players[debt.fromPlayerId].cash += interest
-        debt.amount += 0
-        ns.log = [`💳 ${p.name}が${ns.players[debt.fromPlayerId].name}に利息${interest}円支払い`, ...ns.log.slice(0,29)]
+        lender.cash += interest
+        ns.log = [`💳 ${p.name}が${lender.name}に利息${interest}円支払い`, ...ns.log.slice(0,29)]
       } else {
         // 払えない場合は現金を0にして差額は借金に上乗せ
         const shortfall = interest - p.cash
@@ -727,6 +756,7 @@ function processYearEnd(ns: any): any {
         debt.amount += shortfall
         ns.log = [`⚠️ ${p.name}が利息${interest}円を払えず！${shortfall}円を借金に上乗せ`, ...ns.log.slice(0,29)]
       }
+      recalcAssets(lender, ns)  // ③貸主側の総資産を更新
     }
   }
 
@@ -807,7 +837,23 @@ function processYearEnd(ns: any): any {
 
     // 即時適用イベント
     if (card.type === 'bankruptcy') {
-      // 倒産は別途UIで処理
+      // ⑫倒産イベント：サーバー側でリーダーの会社を全売却
+      const alivePlayers = ns.players.filter((p: any) => !p.bankrupt)
+      if (alivePlayers.length > 0) {
+        const leader = [...alivePlayers].sort((a: any, b: any) => b.totalAssets - a.totalAssets)[0]
+        const companiesCopy = [...leader.companies]
+        for (const cid of companiesCopy) {
+          const comp = COMPANIES.find(c => c.id === cid)
+          if (!comp) continue
+          const sellPrice = comp.cost
+          leader.cash += sellPrice
+          leader.companies = leader.companies.filter((id: string) => id !== cid)
+          const stockKey = cid === 'restaurant3' ? 'restaurant' : cid === 'railway' ? 'bus' : cid
+          if (ns.companyStock && ns.companyStock[stockKey] !== undefined) ns.companyStock[stockKey] += 1
+        }
+        recalcAssets(leader, ns)
+        ns.log = [`🏚️ 倒産イベント！${leader.name}の会社が全て強制売却された！`, ...ns.log.slice(0,29)]
+      }
     } else if (card.type === 'charity') {
       // 生存プレイヤーの中で資産最少のプレイヤーに1000円ずつ渡す
       const alivePlayers = ns.players.filter((p: any) => !p.bankrupt)
