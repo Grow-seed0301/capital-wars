@@ -35,13 +35,25 @@ export function mainPage(): string {
 <script src="https://cdn.tailwindcss.com">SCRIPT_END
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <style>
+/* ===== Root Variables ===== */
 :root{
-  --c1:#6C63FF;--c2:#FF6584;--c3:#FFD700;--c4:#4CAF50;--c5:#FF9800;
+  --c1:#4A90E2;      /* sky blue */
+  --c2:#FF5252;      /* action red */
+  --c3:#FFD700;      /* gold */
+  --c4:#4CAF50;      /* green */
+  --c5:#FF9800;      /* orange */
+  --c6:#7C4DFF;      /* purple */
+  --bg-sky1:#87CEEB;
+  --bg-sky2:#FFF8DC;
+  --bg-city:#2C3E50;
+  --title-gold1:#FFD700;
+  --title-gold2:#FF8C00;
+  --title-gold3:#FFF176;
 }
 *{box-sizing:border-box;}
 body{
-  font-family:'Segoe UI',sans-serif;
-  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  font-family:'Segoe UI','Hiragino Kaku Gothic ProN','Meiryo',sans-serif;
+  background:linear-gradient(170deg,#1a1a35 0%,#0d2137 55%,#071520 100%);
   min-height:100vh;color:#fff;
 }
 .screen{display:none;}
@@ -52,39 +64,190 @@ body{
 .star{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;animation:twinkle var(--dur,3s) infinite;}
 @keyframes twinkle{0%,100%{opacity:.2;}50%{opacity:1;}}
 
+/* ===== Title screen specific background ===== */
+#screen-title{
+  background:
+    linear-gradient(180deg,
+      rgba(135,206,250,0.18) 0%,
+      rgba(255,215,100,0.10) 40%,
+      rgba(30,60,120,0.30) 70%,
+      rgba(10,20,50,0.50) 100%
+    );
+}
+
+/* ===== LOGO 3D effect ===== */
+.logo-wrap{
+  position:relative;
+  display:inline-block;
+  filter:drop-shadow(0 0 40px rgba(255,215,0,.7));
+  animation:logoFloat 3s ease-in-out infinite;
+}
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0px);}
+  50%{transform:translateY(-10px);}
+}
+.logo-capital{
+  display:block;
+  font-size:clamp(3.5rem,12vw,6rem);
+  font-weight:900;
+  letter-spacing:.10em;
+  line-height:1;
+  background:linear-gradient(180deg,#FFF9C4 0%,#FFD700 40%,#FF8C00 75%,#B8600A 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:none;
+  position:relative;
+  -webkit-text-stroke:2px rgba(180,100,0,.4);
+}
+.logo-wars{
+  display:block;
+  font-size:clamp(4.5rem,16vw,8rem);
+  font-weight:900;
+  letter-spacing:.12em;
+  line-height:1;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFD700 35%,#FF6600 70%,#CC3300 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  -webkit-text-stroke:2px rgba(150,50,0,.5);
+  position:relative;
+}
+.logo-shadow{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,#FFD700 0%,#FF8C00 60%,#FF4400 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:blur(8px);
+  opacity:.5;
+  transform:translate(3px,5px);
+  z-index:-1;
+  font-size:clamp(4.5rem,16vw,8rem);
+  font-weight:900;
+  letter-spacing:.12em;
+  line-height:1;
+}
+
+/* ===== Character icons ring ===== */
+.char-ring{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  max-width:320px;margin:0 auto;
+}
+.char-icon{
+  width:56px;height:56px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;
+  border:3px solid rgba(255,255,255,.4);
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+  animation:charBounce var(--d,2.5s) ease-in-out infinite;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(6px);
+  cursor:default;
+  transition:transform .2s;
+}
+.char-icon:hover{transform:scale(1.2) rotate(-5deg);}
+@keyframes charBounce{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-6px);}
+}
+
+/* ===== Tagline ===== */
+.tagline{
+  font-size:.95rem;
+  font-weight:700;
+  letter-spacing:.15em;
+  color:rgba(255,240,180,.75);
+  text-shadow:0 0 12px rgba(255,215,0,.4);
+}
+
+/* ===== Title buttons ===== */
+.btn-title-start{
+  background:linear-gradient(135deg,#FF6B35 0%,#FF3D00 50%,#DD2200 100%);
+  color:#fff;
+  font-size:1.25rem;
+  font-weight:900;
+  padding:16px 48px;
+  border-radius:50px;
+  border:3px solid rgba(255,200,100,.6);
+  box-shadow:0 6px 24px rgba(255,80,0,.5), 0 0 0 4px rgba(255,150,50,.15);
+  letter-spacing:.05em;
+  transition:all .2s;
+  cursor:pointer;
+}
+.btn-title-start:hover{
+  transform:scale(1.06) translateY(-2px);
+  box-shadow:0 10px 32px rgba(255,80,0,.65), 0 0 0 6px rgba(255,150,50,.2);
+}
+.btn-title-start:active{transform:scale(.97);}
+
+.btn-title-how{
+  background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.08));
+  color:#fff;
+  font-size:1.05rem;
+  font-weight:700;
+  padding:13px 40px;
+  border-radius:50px;
+  border:2px solid rgba(255,255,255,.35);
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+  letter-spacing:.04em;
+  transition:all .2s;
+  cursor:pointer;
+  backdrop-filter:blur(8px);
+}
+.btn-title-how:hover{
+  background:rgba(255,255,255,.25);
+  transform:scale(1.04) translateY(-1px);
+}
+
+/* ===== Floating coins in background ===== */
+.bg-coin{
+  position:absolute;
+  font-size:1.5rem;
+  opacity:.25;
+  animation:bgCoinFloat var(--bd,8s) ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes bgCoinFloat{
+  0%{transform:translateY(0) rotate(0deg);opacity:.15;}
+  50%{opacity:.35;}
+  100%{transform:translateY(-60px) rotate(360deg);opacity:.15;}
+}
+
 /* ===== Cards ===== */
-.card{background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);border-radius:20px;}
+.card{
+  background:rgba(255,255,255,.10);
+  backdrop-filter:blur(14px);
+  border:1.5px solid rgba(255,255,255,.22);
+  border-radius:22px;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
 .card-white{background:#fff;color:#333;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.15);}
 
 /* ===== Buttons ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:50px;font-weight:700;font-size:1rem;cursor:pointer;border:none;transition:all .2s;user-select:none;}
 .btn:active{transform:scale(.95);}
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-.btn-primary{background:linear-gradient(135deg,var(--c1),#9c65ff);color:#fff;box-shadow:0 4px 15px rgba(108,99,255,.5);}
-.btn-primary:hover:not(:disabled){filter:brightness(1.1);}
-.btn-success{background:linear-gradient(135deg,var(--c4),#66bb6a);color:#fff;box-shadow:0 4px 15px rgba(76,175,80,.4);}
-.btn-success:hover:not(:disabled){filter:brightness(1.1);}
-.btn-danger{background:linear-gradient(135deg,#f44336,#e91e63);color:#fff;box-shadow:0 4px 15px rgba(244,67,54,.4);}
-.btn-danger:hover:not(:disabled){filter:brightness(1.1);}
-.btn-warning{background:linear-gradient(135deg,var(--c5),#fdd835);color:#fff;box-shadow:0 4px 15px rgba(255,152,0,.4);}
-.btn-warning:hover:not(:disabled){filter:brightness(1.1);}
-.btn-info{background:linear-gradient(135deg,#00bcd4,#03a9f4);color:#fff;box-shadow:0 4px 15px rgba(0,188,212,.4);}
-.btn-info:hover:not(:disabled){filter:brightness(1.1);}
-.btn-gray{background:rgba(255,255,255,.2);color:#fff;}
-.btn-gray:hover:not(:disabled){background:rgba(255,255,255,.3);}
+.btn-primary{background:linear-gradient(135deg,#4A90E2,#7C4DFF);color:#fff;box-shadow:0 4px 15px rgba(74,144,226,.5);}
+.btn-primary:hover:not(:disabled){filter:brightness(1.12);}
+.btn-success{background:linear-gradient(135deg,#4CAF50,#00BFA5);color:#fff;box-shadow:0 4px 15px rgba(76,175,80,.4);}
+.btn-success:hover:not(:disabled){filter:brightness(1.12);}
+.btn-danger{background:linear-gradient(135deg,#FF5252,#E91E63);color:#fff;box-shadow:0 4px 15px rgba(255,82,82,.4);}
+.btn-danger:hover:not(:disabled){filter:brightness(1.12);}
+.btn-warning{background:linear-gradient(135deg,#FF9800,#FFD600);color:#fff;box-shadow:0 4px 15px rgba(255,152,0,.4);}
+.btn-warning:hover:not(:disabled){filter:brightness(1.12);}
+.btn-info{background:linear-gradient(135deg,#00BCD4,#0288D1);color:#fff;box-shadow:0 4px 15px rgba(0,188,212,.4);}
+.btn-info:hover:not(:disabled){filter:brightness(1.12);}
+.btn-gray{background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.25);}
+.btn-gray:hover:not(:disabled){background:rgba(255,255,255,.28);}
 .btn-sm{padding:6px 14px;font-size:.85rem;}
 .btn-lg{padding:14px 32px;font-size:1.2rem;}
 
 /* ===== Tab ===== */
 .tab{padding:8px 18px;border-radius:25px;font-weight:600;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.6);border:2px solid transparent;}
-.tab.active{background:var(--c1);color:#fff;border-color:var(--c1);}
+.tab.active{background:linear-gradient(135deg,#4A90E2,#7C4DFF);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(74,144,226,.4);}
 
 /* ===== Player card ===== */
 .player-panel{border-radius:16px;padding:12px;border:2px solid transparent;transition:all .3s;}
 .player-panel.current{border-color:var(--c3);box-shadow:0 0 20px rgba(255,215,0,.4);}
 
 /* ===== Dice ===== */
-.dice-face{width:70px;height:70px;background:#fff;border-radius:14px;display:grid;place-items:center;font-size:2.5rem;color:#333;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .4s;}
+.dice-face{width:70px;height:70px;background:linear-gradient(135deg,#fff,#f0f0f0);border-radius:14px;display:grid;place-items:center;font-size:2.5rem;color:#333;box-shadow:0 6px 20px rgba(0,0,0,.3),inset 0 1px 1px rgba(255,255,255,.9);transition:transform .4s;}
 .dice-face.rolling{animation:rollDice .5s ease-out;}
 @keyframes rollDice{0%{transform:rotate(0);} 25%{transform:rotate(90deg);} 50%{transform:rotate(180deg);} 75%{transform:rotate(270deg);} 100%{transform:rotate(360deg);}}
 
@@ -97,7 +260,7 @@ body{
 @keyframes toastIn{from{transform:translateX(-50%) translateY(20px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
 
 /* ===== Modal ===== */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:8888;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:8888;}
 .modal-box{max-width:480px;width:90%;border-radius:24px;overflow:hidden;}
 
 /* ===== Handoff / Turn Start ===== */
@@ -110,7 +273,6 @@ body{
 .handoff-subtitle{animation:slideUp .4s ease-out .35s both;}
 @keyframes slideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 .handoff-btn{animation:slideUp .4s ease-out .5s both;}
-/* ターン開始カウントダウン */
 .turn-badge{display:inline-block;padding:4px 18px;border-radius:50px;background:rgba(255,255,255,.12);font-size:.85rem;font-weight:700;letter-spacing:.05em;}
 
 /* ===== Event card ===== */
@@ -129,38 +291,50 @@ body{
 
 /* ===== Result screen ===== */
 .rank-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;margin-bottom:8px;}
-.rank-row.rank-1{background:linear-gradient(135deg,#ffd700,#ffb300);color:#333;}
-.rank-row.rank-2{background:linear-gradient(135deg,#ccc,#9e9e9e);color:#333;}
-.rank-row.rank-3{background:linear-gradient(135deg,#cd7f32,#8d4e0c);color:#fff;}
-.rank-row.rank-other{background:rgba(255,255,255,.15);}
+.rank-row.rank-1{background:linear-gradient(135deg,#FFD700,#FFB300);color:#333;box-shadow:0 4px 16px rgba(255,215,0,.4);}
+.rank-row.rank-2{background:linear-gradient(135deg,#E0E0E0,#9E9E9E);color:#333;}
+.rank-row.rank-3{background:linear-gradient(135deg,#CD7F32,#8D4E0C);color:#fff;}
+.rank-row.rank-other{background:rgba(255,255,255,.13);}
 
 /* ===== Setup screen ===== */
-.player-setup-row{display:flex;align-items:center;gap:8px;padding:10px;background:rgba(255,255,255,.08);border-radius:12px;margin-bottom:8px;}
+.player-setup-row{display:flex;align-items:center;gap:8px;padding:10px;background:rgba(255,255,255,.09);border-radius:12px;margin-bottom:8px;}
 
 /* ===== Responsive ===== */
 @media(max-width:640px){
   .btn-lg{font-size:1rem;padding:12px 24px;}
   .dice-face{width:56px;height:56px;font-size:2rem;}
+  .logo-capital{font-size:clamp(2.8rem,10vw,4.5rem);}
+  .logo-wars{font-size:clamp(3.5rem,13vw,6rem);}
 }
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:rgba(255,255,255,.05);}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px;}
 
 /* ===== Number badge ===== */
 .badge{display:inline-block;background:var(--c2);color:#fff;border-radius:50%;width:22px;height:22px;text-align:center;line-height:22px;font-size:.75rem;font-weight:700;}
 
 /* ===== Action highlight ===== */
 .action-item{background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:14px;padding:12px;cursor:pointer;transition:all .2s;}
-.action-item:hover:not(.disabled){background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);}
+.action-item:hover:not(.disabled){background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);}
 .action-item.disabled{opacity:.4;cursor:not-allowed;}
 
 /* ===== Company/Stock cards ===== */
-.item-card{background:rgba(255,255,255,.1);border-radius:12px;padding:10px;border:2px solid transparent;transition:all .2s;cursor:pointer;}
-.item-card:hover:not(.disabled){border-color:var(--c3);background:rgba(255,215,0,.1);}
+.item-card{background:rgba(255,255,255,.10);border-radius:12px;padding:10px;border:2px solid transparent;transition:all .2s;cursor:pointer;}
+.item-card:hover:not(.disabled){border-color:var(--c3);background:rgba(255,215,0,.12);}
 .item-card.disabled{opacity:.4;cursor:not-allowed;}
 .item-card.owned{border-color:var(--c4);background:rgba(76,175,80,.15);}
+
+/* ===== City silhouette ===== */
+.city-silhouette{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:120px;
+  background:linear-gradient(180deg,transparent 0%,rgba(15,30,60,.6) 40%,rgba(8,18,40,.9) 100%);
+  pointer-events:none;
+  z-index:0;
+}
 </style>
 </head>
 <body>
@@ -169,18 +343,107 @@ body{
 <!-- ================================================================
   TITLE SCREEN
 ================================================================ -->
-<div id="screen-title" class="screen active" style="position:relative;z-index:1;">
-  <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-    <div class="text-8xl mb-4" style="animation:pulse 1.5s infinite;">⚔️</div>
-    <h1 class="text-6xl font-black mb-1" style="letter-spacing:.08em;text-shadow:0 0 40px rgba(255,215,0,.9);">CAPITAL</h1>
-    <h1 class="text-6xl font-black mb-6" style="color:var(--c3);letter-spacing:.08em;text-shadow:0 0 40px rgba(255,215,0,.9);">WARS</h1>
-    <p class="text-base opacity-70 mb-10 tracking-widest">— 資本をめぐる頭脳戦 —</p>
-    <button class="btn btn-primary btn-lg mb-4" onclick="showScreen('title2')">
-      <i class="fas fa-play"></i> ゲームをはじめる
-    </button>
-    <button class="btn btn-info btn-lg mb-4" onclick="showTutorial()">
-      <i class="fas fa-book"></i> あそびかた
-    </button>
+<div id="screen-title" class="screen active" style="position:relative;z-index:1;min-height:100vh;overflow:hidden;">
+
+  <!-- 背景：空グラデーション -->
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0B1B4D 0%,#1B3A7A 30%,#2D5FA6 55%,#1A3060 75%,#0A1535 100%);z-index:0;"></div>
+
+  <!-- 背景コイン・お金 浮遊アニメーション -->
+  <span class="bg-coin" style="left:5%;bottom:10%;--bd:7s;animation-delay:0s;">💰</span>
+  <span class="bg-coin" style="left:15%;bottom:5%;--bd:9s;animation-delay:1.5s;">🪙</span>
+  <span class="bg-coin" style="left:28%;bottom:20%;--bd:6s;animation-delay:0.7s;">💵</span>
+  <span class="bg-coin" style="left:72%;bottom:8%;--bd:8s;animation-delay:2s;">🪙</span>
+  <span class="bg-coin" style="left:82%;bottom:15%;--bd:10s;animation-delay:0.3s;">💰</span>
+  <span class="bg-coin" style="left:90%;bottom:5%;--bd:7.5s;animation-delay:1s;">💵</span>
+  <span class="bg-coin" style="left:50%;bottom:3%;--bd:11s;animation-delay:3s;">🪙</span>
+  <span class="bg-coin" style="left:60%;bottom:25%;--bd:8.5s;animation-delay:0.5s;font-size:1rem;">📈</span>
+  <span class="bg-coin" style="left:38%;bottom:12%;--bd:9.5s;animation-delay:2.5s;font-size:1rem;">🏢</span>
+
+  <!-- 都市シルエット SVG -->
+  <svg style="position:absolute;bottom:0;left:0;width:100%;height:160px;z-index:1;" viewBox="0 0 800 160" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="800" height="160" fill="rgba(5,12,35,0.85)"/>
+    <!-- ビル群シルエット -->
+    <rect x="10" y="60" width="40" height="100" fill="rgba(20,40,90,0.9)"/>
+    <rect x="20" y="45" width="20" height="20" fill="rgba(20,40,90,0.9)"/>
+    <rect x="55" y="80" width="30" height="80" fill="rgba(15,35,80,0.9)"/>
+    <rect x="90" y="40" width="50" height="120" fill="rgba(20,45,100,0.9)"/>
+    <rect x="100" y="25" width="30" height="20" fill="rgba(20,45,100,0.9)"/>
+    <rect x="145" y="65" width="35" height="95" fill="rgba(18,38,85,0.9)"/>
+    <rect x="185" y="50" width="45" height="110" fill="rgba(22,48,105,0.9)"/>
+    <rect x="195" y="35" width="25" height="20" fill="rgba(22,48,105,0.9)"/>
+    <rect x="235" y="70" width="30" height="90" fill="rgba(16,36,80,0.9)"/>
+    <rect x="270" y="30" width="55" height="130" fill="rgba(24,52,110,0.9)"/>
+    <rect x="283" y="15" width="28" height="20" fill="rgba(24,52,110,0.9)"/>
+    <rect x="330" y="55" width="40" height="105" fill="rgba(18,42,95,0.9)"/>
+    <rect x="375" y="45" width="35" height="115" fill="rgba(20,46,102,0.9)"/>
+    <rect x="415" y="60" width="30" height="100" fill="rgba(17,38,88,0.9)"/>
+    <rect x="450" y="35" width="50" height="125" fill="rgba(22,50,108,0.9)"/>
+    <rect x="462" y="20" width="26" height="18" fill="rgba(22,50,108,0.9)"/>
+    <rect x="505" y="55" width="38" height="105" fill="rgba(19,42,96,0.9)"/>
+    <rect x="548" y="42" width="45" height="118" fill="rgba(21,47,104,0.9)"/>
+    <rect x="558" y="28" width="24" height="18" fill="rgba(21,47,104,0.9)"/>
+    <rect x="598" y="62" width="32" height="98" fill="rgba(16,36,82,0.9)"/>
+    <rect x="635" y="38" width="48" height="122" fill="rgba(23,50,110,0.9)"/>
+    <rect x="647" y="22" width="26" height="20" fill="rgba(23,50,110,0.9)"/>
+    <rect x="688" y="55" width="36" height="105" fill="rgba(18,40,90,0.9)"/>
+    <rect x="728" y="44" width="42" height="116" fill="rgba(20,45,100,0.9)"/>
+    <rect x="775" y="68" width="30" height="92" fill="rgba(16,36,82,0.9)"/>
+    <!-- 窓の光 -->
+    <rect x="95" y="50" width="6" height="6" fill="rgba(255,230,100,.5)" rx="1"/>
+    <rect x="107" y="50" width="6" height="6" fill="rgba(255,230,100,.3)" rx="1"/>
+    <rect x="95" y="63" width="6" height="6" fill="rgba(255,230,100,.4)" rx="1"/>
+    <rect x="275" y="40" width="6" height="6" fill="rgba(255,230,100,.5)" rx="1"/>
+    <rect x="288" y="40" width="6" height="6" fill="rgba(255,230,100,.3)" rx="1"/>
+    <rect x="455" y="45" width="6" height="6" fill="rgba(255,230,100,.4)" rx="1"/>
+    <rect x="468" y="45" width="6" height="6" fill="rgba(255,230,100,.5)" rx="1"/>
+    <rect x="553" y="48" width="6" height="6" fill="rgba(255,230,100,.3)" rx="1"/>
+    <rect x="640" y="43" width="6" height="6" fill="rgba(255,230,100,.5)" rx="1"/>
+    <rect x="652" y="43" width="6" height="6" fill="rgba(255,230,100,.3)" rx="1"/>
+  </svg>
+
+  <!-- メインコンテンツ -->
+  <div style="position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px 180px;text-align:center;">
+
+    <!-- キャラクターアイコン群（上段） -->
+    <div class="char-ring" style="margin-bottom:18px;">
+      <div class="char-icon" style="--d:2.2s;border-color:rgba(255,215,0,.6);background:rgba(255,215,0,.15);">👨‍💼</div>
+      <div class="char-icon" style="--d:2.7s;animation-delay:.3s;border-color:rgba(255,100,100,.5);background:rgba(255,80,80,.12);">👩‍💼</div>
+      <div class="char-icon" style="--d:2.4s;animation-delay:.6s;border-color:rgba(100,200,255,.5);background:rgba(80,180,255,.12);">🧑‍💻</div>
+      <div class="char-icon" style="--d:3.0s;animation-delay:.2s;border-color:rgba(150,255,150,.5);background:rgba(100,220,100,.12);">👴</div>
+      <div class="char-icon" style="--d:2.5s;animation-delay:.8s;border-color:rgba(220,180,255,.5);background:rgba(180,100,255,.12);">👧</div>
+    </div>
+
+    <!-- ロゴ -->
+    <div class="logo-wrap" style="margin-bottom:6px;">
+      <span class="logo-capital">CAPITAL</span>
+      <div style="position:relative;">
+        <span class="logo-wars">WARS</span>
+        <!-- グロー効果 -->
+        <span class="logo-shadow" aria-hidden="true">WARS</span>
+      </div>
+    </div>
+
+    <!-- サブタイトル -->
+    <p class="tagline" style="margin-bottom:28px;">⚔️ 資本をめぐる頭脳戦 ⚔️</p>
+
+    <!-- 特徴バッジ -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:32px;">
+      <span style="background:rgba(255,215,0,.18);border:1.5px solid rgba(255,215,0,.5);border-radius:50px;padding:5px 14px;font-size:.78rem;font-weight:700;color:#FFD700;">🏢 会社経営</span>
+      <span style="background:rgba(76,175,80,.18);border:1.5px solid rgba(76,175,80,.5);border-radius:50px;padding:5px 14px;font-size:.78rem;font-weight:700;color:#81C784;">📈 株式投資</span>
+      <span style="background:rgba(74,144,226,.18);border:1.5px solid rgba(74,144,226,.5);border-radius:50px;padding:5px 14px;font-size:.78rem;font-weight:700;color:#64B5F6;">🏧 ATM運用</span>
+      <span style="background:rgba(255,82,82,.18);border:1.5px solid rgba(255,82,82,.5);border-radius:50px;padding:5px 14px;font-size:.78rem;font-weight:700;color:#FF8A80;">👥 2〜10人</span>
+    </div>
+
+    <!-- ボタン群 -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <button class="btn-title-start" onclick="showScreen('title2')">
+        🎮 ゲームをはじめる
+      </button>
+      <button class="btn-title-how" onclick="showTutorial()">
+        📖 あそびかた
+      </button>
+    </div>
+
   </div>
 </div>
 
