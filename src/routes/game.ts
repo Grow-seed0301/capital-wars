@@ -809,15 +809,16 @@ function processYearEnd(ns: any): any {
     if (card.type === 'bankruptcy') {
       // 倒産は別途UIで処理
     } else if (card.type === 'charity') {
-      // 資産最少プレイヤーに1000円ずつ渡す
-      const poorest = ns.players.reduce((min: any, p: any) => p.totalAssets < min.totalAssets ? p : min, ns.players[0])
+      // 生存プレイヤーの中で資産最少のプレイヤーに1000円ずつ渡す
+      const alivePlayers = ns.players.filter((p: any) => !p.bankrupt)
+      const poorest = alivePlayers.reduce((min: any, p: any) => p.totalAssets < min.totalAssets ? p : min, alivePlayers[0])
       for (const p of ns.players) {
-        if (p.id !== poorest.id && !p.bankrupt) {
-          const give = Math.min(1000, p.cash)
-          p.cash -= give
-          poorest.cash += give
-          recalcAssets(p, ns)
-        }
+        // 破産者・最少プレイヤー自身はスキップ。現金が1000円未満なら破産防止のためスキップ
+        if (p.id === poorest.id || p.bankrupt) continue
+        if (p.cash < 1000) continue
+        p.cash -= 1000
+        poorest.cash += 1000
+        recalcAssets(p, ns)
       }
       recalcAssets(poorest, ns)
       ns.log = [`🤝 ${poorest.name}に全員が1000円ずつ渡した！`, ...ns.log.slice(0,29)]
