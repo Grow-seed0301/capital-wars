@@ -1352,8 +1352,8 @@ function renderLog(){
 // クライアント専用フラグをサーバーレスポンスに引き継ぐ
 // （G = data.state でサーバーが知らないフラグが消えないよう保護）
 // ただし新しい年のイベントカード（IDが変わった）場合はフラグをリセット
-const CLIENT_FLAGS = ['_eventShown','_eventDrawnBy','_eventNotified'] as const
-function mergeClientState(newState: any): any {
+const CLIENT_FLAGS = ['_eventShown','_eventDrawnBy','_eventNotified']
+function mergeClientState(newState) {
   if(!G) return newState  // 初回はそのまま返す
   // 年が変わった or イベントカードIDが変わった → フラグリセット
   const sameEvent = G.eventCard && newState.eventCard &&
