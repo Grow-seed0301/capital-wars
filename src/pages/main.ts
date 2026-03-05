@@ -1124,9 +1124,9 @@ function renderActions(){
 
   const actions = [
     { icon:'💼', label:'はたらく',   sub: G.activeEventTypes.includes('work_x3')?'報酬300円！':'報酬100円', fn: doWork },
-    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす',   fn: showATMPanel },
-    { icon:'🏢', label:'会社を買う', sub:'何個でも購入可',      fn: ()=>switchTab('market') },
-    { icon:'📈', label:'株を買う',   sub:'何株でも購入可',      fn: ()=>switchTab('market') },
+    { icon:'🏧', label:'ATM',        sub:'ちょきん・おろす（アクション消費）', fn: showATMPanel },
+    { icon:'🏢', label:'会社を買う', sub:'何個でも購入可（消費なし）',         fn: ()=>switchTab('market') },
+    { icon:'📈', label:'株を買う',   sub:'何株でも購入可（消費なし）',         fn: ()=>switchTab('market') },
   ]
   if(cp.companies.includes('bank'))
     actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel })
@@ -1374,12 +1374,16 @@ function renderMarket(){
   // 1年目はサイコロロック不要（購入後すぐ使えるようにする）
   const diceLocked = hasRollableAssets && !cp.diceRolled && G.year > 1
   const maxActMarket = cp.extraAction ? 2 : 1
+  // 会社・株購入はアクション消費なし（buy-company/buy-stockはactionUsed不変）
+  // → アクション済みでも購入ボタンは有効にする
+  const canBuyItem = !cp.isAI && !cp.bankrupt && !inRollPhase && !diceLocked
   const canAct = !cp.isAI && !inRollPhase && !diceLocked && cp.actionUsed < maxActMarket
   const el = document.getElementById('market-content')
   el.innerHTML = ''
 
   // アクション済みの場合はターン終了バナーを最上部に表示
-  if(cp.actionUsed >= 1 && !cp.isAI){
+  // 会社・株購入はactionUsed消費なしので、work/deposit/withdraw等のアクションが済んだ場合のみ表示
+  if(cp.actionUsed >= 1 && !cp.isAI && !cp.bankrupt){
     const doneBanner = document.createElement('div')
     doneBanner.className = 'rounded-2xl p-4 mb-4 flex items-center justify-between gap-3'
     doneBanner.style.cssText = 'background:linear-gradient(135deg,rgba(76,175,80,.2),rgba(76,175,80,.05));border:2px solid #4CAF50;'
@@ -1424,7 +1428,7 @@ function renderMarket(){
     const owned = cp.companies.includes(comp.id)
     const stock = companyStock[comp.id] ?? 99
     const soldOut = stock <= 0
-    const canBuy = canAct && !owned && !soldOut && cp.cash >= comp.cost
+    const canBuy = canBuyItem && !owned && !soldOut && cp.cash >= comp.cost
 
     // 在庫バッジ
     let stockBadge = ''
@@ -1496,7 +1500,7 @@ function renderMarket(){
     const remaining = Math.max(0, limit - totalOwned)
     const soldOut = remaining <= 0
 
-    const canBuy = canAct && !soldOut && cp.cash >= price
+    const canBuy = canBuyItem && !soldOut && cp.cash >= price
 
     // 在庫バッジ
     let stockBadge = ''
@@ -1643,7 +1647,7 @@ function renderLog(){
 // クライアント専用フラグをサーバーレスポンスに引き継ぐ
 // （G = data.state でサーバーが知らないフラグが消えないよう保護）
 // ただし新しい年のイベントカード（IDが変わった）場合はフラグをリセット
-const CLIENT_FLAGS = ['_eventShown','_eventDrawnBy','_eventNotified']
+const CLIENT_FLAGS = ['_eventShown','_eventDrawnBy','_eventNotified','_bankruptcyHandled']
 function mergeClientState(newState) {
   if(!G) return newState  // 初回はそのまま返す
   // 年が変わった or イベントカードIDが変わった → フラグリセット
@@ -1745,7 +1749,10 @@ async function doBuyCompany(companyId){
 // Company upgrade
 async function doUpgradeCompany(companyId){
   const comp = G.companies.find(c=>c.id===companyId)
+  // ⑨ nullクラッシュ対策
+  if(!comp || !comp.upgradeTo){ showToast('アップグレードできません','error'); return }
   const newComp = G.companies.find(c=>c.id===comp.upgradeTo)
+  if(!newComp){ showToast('アップグレード先データが見つかりません','error'); return }
   showConfirm(
     '⬆️ アップグレード',
     \`\${comp.emoji}\${comp.name} → \${newComp.emoji}\${newComp.name}<br>費用: <span class="font-black">\${fmt(comp.upgradeCost)}</span>\`,
@@ -1814,12 +1821,11 @@ async function doBuyStock(stockId){
 async function doSellStock(stockId, qty){
   const st = G.stocks.find(s=>s.id===stockId)
   if(!st){ showToast('株データが見つかりません','error'); return }
-  let price = st.buyPrice * qty
-  if(G.activeEventTypes.includes('stock_x2')) price*=2
-  if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
+  // ② 売却価格はイベント影響なし・buyPrice固定（バックエンドと一致させる）
+  const price = st.buyPrice * qty
   showConfirm(
     st.emoji+' '+st.name+'を売る？',
-    qty+'\u682a <span class="font-black">'+fmt(price)+'</span>\u3067\u58f2\u5374<br><span class="text-xs opacity-60">\u73fe\u5728\u306e\u8cfc\u5165\u5024\u30d9\u30fc\u30b9\u3067\u58f2\u5374\u3057\u307e\u3059</span>',
+    qty+'\u682a <span class="font-black">'+fmt(price)+'</span>\u3067\u58f2\u5374<br><span class="text-xs opacity-60">\u8cfc\u5165\u5024\u30d9\u30fc\u30b9\u306e\u56fa\u5b9a\u4fa1\u683c\u3067\u58f2\u5374\u3057\u307e\u3059</span>',
     async ()=>{
       const data = await apiPost('/action/sell-stock',{state:G, stockId, qty})
       if(!data) return
@@ -1960,7 +1966,7 @@ async function rollDice(){
       document.getElementById('diceResult').textContent=''
       return
     }
-    G = res.state
+    G = mergeClientState(res.state)  // ⑭ クライアントフラグを保持するためmergeClientState経由に
 
     // \u5185\u8a33\u3092\u8868\u793a
     const results = res.results || []
@@ -2063,8 +2069,9 @@ async function doShrineCollect(targetPlayerId){
 function showLendPanel(){
   const cp = G.players[G.currentPlayer]
   const sel = document.getElementById('lendTarget')
+  // ⑥破産プレイヤーへの融資は回収不能なので除外
   sel.innerHTML = '<option value="">-- 選ぶ --</option>'+
-    G.players.filter(p=>p.id!==cp.id).map(p=>\`<option value="\${p.id}">\${PLAYER_EMOJIS[p.id]} \${p.name}（手持:\${fmt(p.cash)}）</option>\`).join('')
+    G.players.filter(p=>p.id!==cp.id && !p.bankrupt).map(p=>\`<option value="\${p.id}">\${PLAYER_EMOJIS[p.id]} \${p.name}（手持:\${fmt(p.cash)}）</option>\`).join('')
   document.getElementById('lend-panel').classList.remove('hidden')
 }
 function hideLendPanel(){ document.getElementById('lend-panel').classList.add('hidden') }
@@ -2149,8 +2156,10 @@ async function doEndTurn(){
       return
     }
 
-    // Bankruptcy?
-    if(G.eventCard && G.eventCard.type==='bankruptcy'){
+    // Bankruptcy? 倒産イベントは dismissEvent内で処理する。
+    // _bankruptcyHandledフラグで二重呼び出しを防ぐ
+    if(G.eventCard && G.eventCard.type==='bankruptcy' && G._eventShown && !G._bankruptcyHandled){
+      G._bankruptcyHandled = true
       handleBankruptcy()
       return
     }
@@ -2230,7 +2239,9 @@ function _showEventReveal(card, label, btnText){
 function dismissEvent(){
   document.getElementById('event-overlay').classList.remove('show')
 
-  if(G.eventCard && G.eventCard.type === 'bankruptcy'){
+  // 倒産イベント①: _bankruptcyHandledフラグで二重呼び出しを防ぐ
+  if(G.eventCard && G.eventCard.type === 'bankruptcy' && !G._bankruptcyHandled){
+    G._bankruptcyHandled = true
     handleBankruptcy()
     return
   }
@@ -2262,23 +2273,12 @@ function afterEventHandoff(){
 }
 
 async function handleBankruptcy(){
-  // Force current player (who drew the card = rank 1) to sell all companies
+  // サーバー側（processYearEnd）で既に会社売却済みのため、
+  // フロントは通知表示のみ行い、afterBankruptcy()に進む
   const leaderId = G.turnOrder[0]
   const leader = G.players[leaderId]
-  if(leader.companies.length === 0){
-    showToast('🏚️ 倒産！でも会社がありませんでした','error')
-    afterBankruptcy()
-    return
-  }
-  showToast('🏚️ 倒産！'+leader.name+'が会社を全て売却します','error')
-  // auto-sell all
-  for(const cid of [...leader.companies]){
-    const res = await fetch('/api/game/action/sell-company',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({state:G, companyId:cid})
-    })
-    const d = await res.json()
-    if(d.success) G = mergeClientState(d.state)
+  if(leader && leader.name){
+    showToast('🏚️ 倒産イベント！'+leader.name+'の会社が強制売却されました','error')
   }
   afterBankruptcy()
 }
@@ -2537,6 +2537,10 @@ function backToTitle(){
 
 function replayGame(){
   G = null
+  // ⑪ 前回の設定を保持したままsetup画面へ（プレイヤー設定は再利用可）
+  if(selectedPlayerCount > 0){
+    renderPlayerSetupList()
+  }
   showScreen('setup')
 }
 
