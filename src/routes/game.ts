@@ -249,7 +249,7 @@ gameRouter.post('/action/work', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
   if (!canAct(p)) return c.json({ success: false, error: 'すでにアクション済みです' })
-  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   let earn = 100
   if (ns.activeEventTypes.includes('work_x3')) earn = 300
@@ -271,7 +271,7 @@ gameRouter.post('/action/deposit', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
   if (!canAct(p)) return c.json({ success: false, error: 'すでにアクション済みです' })
-  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
   if (!amount || amount <= 0) return c.json({ success: false, error: '金額を入力してください' })
   if (p.cash < amount) return c.json({ success: false, error: '現金が足りません（現金: '+p.cash+'円）' })
 
@@ -292,7 +292,7 @@ gameRouter.post('/action/withdraw', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
   if (!canAct(p)) return c.json({ success: false, error: 'アクション済みです' })
-  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
   if (!amount || amount <= 0) return c.json({ success: false, error: '金額を入力してください' })
   if (p.atm < amount) return c.json({ success: false, error: 'ATM残高が足りません（ATM: '+p.atm+'円）' })
 
@@ -317,7 +317,7 @@ gameRouter.post('/action/buy-company', async (c) => {
   // アクション済みなら購入不可
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
-  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp) return c.json({ success: false, error: '会社が見つかりません' })
@@ -349,7 +349,7 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   const p = ns.players[ns.currentPlayer]
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
-  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   const comp = COMPANIES.find(c => c.id === companyId)
   if (!comp || !comp.upgradeTo) return c.json({ success: false, error: 'アップグレード不可' })
@@ -493,7 +493,7 @@ gameRouter.post('/action/buy-stock', async (c) => {
 
   if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
-  if (needsDiceFirst(p)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
   const st = STOCKS.find(s => s.id === stockId)
   if (!st) return c.json({ success: false, error: '株が見つかりません' })
@@ -807,8 +807,10 @@ function canAct(p: any): boolean {
 
 // サイコロを先に振る必要があるか
 // 会社（サイコロあり）or 株を持っていて、まだサイコロを振っていない場合 true
-function needsDiceFirst(p: any): boolean {
-  if (p.diceRolled) return false  // 既に振った
+// 1年目はターン開始時に資産がないため強制不要
+function needsDiceFirst(p: any, year: number = 2): boolean {
+  if (year <= 1) return false      // 1年目は強制しない
+  if (p.diceRolled) return false   // 既に振った
   const hasRollable =
     (p.companies || []).some((cid: string) => {
       const c = COMPANIES.find(x => x.id === cid)

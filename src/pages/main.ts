@@ -811,7 +811,8 @@ function renderActions(){
   // ステップ1: サイコロ未振り かつ 振るべき資産あり
   //   → サイコロボタンのみ表示。他アクションは一切非表示
   // ═══════════════════════════════════════════════════════
-  const needsDice = hasRollable && !cp.diceRolled
+  // 1年目はターン開始時に資産がないため強制サイコロは2年目以降のみ
+  const needsDice = hasRollable && !cp.diceRolled && G.year > 1
   if(needsDice){
     // ヘッダー説明
     const header = document.createElement('div')
@@ -1078,7 +1079,8 @@ function renderMarket(){
     const c = G.companies.find(x=>x.id===cid)
     return c && c.rolls.length > 0 && c.id !== 'bank'
   }) || cp.stocks.some(s=>s.qty>0)
-  const diceLocked = hasRollableAssets && !cp.diceRolled
+  // 1年目はサイコロロック不要（購入後すぐ使えるようにする）
+  const diceLocked = hasRollableAssets && !cp.diceRolled && G.year > 1
   const canAct = cp.actionUsed === 0 && !cp.isAI && !inRollPhase && !diceLocked
   const el = document.getElementById('market-content')
   el.innerHTML = ''
