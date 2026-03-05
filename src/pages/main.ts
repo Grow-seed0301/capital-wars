@@ -100,14 +100,28 @@ body{
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:8888;}
 .modal-box{max-width:480px;width:90%;border-radius:24px;overflow:hidden;}
 
-/* ===== Handoff ===== */
-#screen-handoff{position:fixed;inset:0;background:#0a0a1a;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:7777;}
-#screen-handoff.show{display:flex;}
+/* ===== Handoff / Turn Start ===== */
+#screen-handoff{position:fixed;inset:0;background:linear-gradient(135deg,#0a0a1a 0%,#1a1040 100%);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:7777;}
+#screen-handoff.show{display:flex;animation:fadeInHandoff .4s ease-out;}
+@keyframes fadeInHandoff{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+.handoff-emoji-big{font-size:7rem;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) .1s both;}
+@keyframes popIn{from{transform:scale(0) rotate(-15deg);}to{transform:scale(1) rotate(0deg);}}
+.handoff-name{font-size:2.4rem;font-weight:900;background:linear-gradient(90deg,var(--c3),#ff9a3c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:slideUp .4s ease-out .25s both;}
+.handoff-subtitle{animation:slideUp .4s ease-out .35s both;}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.handoff-btn{animation:slideUp .4s ease-out .5s both;}
+/* ターン開始カウントダウン */
+.turn-badge{display:inline-block;padding:4px 18px;border-radius:50px;background:rgba(255,255,255,.12);font-size:.85rem;font-weight:700;letter-spacing:.05em;}
 
 /* ===== Event card ===== */
-#event-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:7000;}
-#event-overlay.show{display:flex;}
-.event-card-big{width:260px;border-radius:24px;padding:30px 20px;text-align:center;background:linear-gradient(135deg,#1a1a2e,#16213e);border:3px solid var(--c3);box-shadow:0 0 40px rgba(255,215,0,.4);}
+#event-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:7000;flex-direction:column;gap:16px;}
+#event-overlay.show{display:flex;animation:fadeInHandoff .3s ease-out;}
+.event-card-big{width:320px;border-radius:24px;padding:32px 24px;text-align:center;background:linear-gradient(135deg,#1a1a2e,#16213e);border:3px solid var(--c3);box-shadow:0 0 60px rgba(255,215,0,.5);}
+#event-draw-area{text-align:center;}
+.event-draw-btn{font-size:1.1rem;padding:14px 36px;border-radius:50px;border:none;cursor:pointer;font-weight:900;background:linear-gradient(135deg,var(--c3),#ff9a3c);color:#333;box-shadow:0 4px 20px rgba(255,215,0,.4);transition:transform .15s,box-shadow .15s;}
+.event-draw-btn:hover{transform:scale(1.05);box-shadow:0 6px 28px rgba(255,215,0,.6);}
+.event-year-label{color:var(--c3);font-size:1rem;font-weight:700;margin-bottom:8px;}
+.event-drawer-name{font-size:1.4rem;font-weight:900;color:#fff;margin-bottom:20px;}
 
 /* ===== Shrine target modal ===== */
 #media-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:7500;}
@@ -378,27 +392,44 @@ body{
   HANDOFF SCREEN (pass to next player)
 ================================================================ -->
 <div id="screen-handoff">
-  <div class="text-center p-8">
-    <div class="text-8xl mb-6 animate-pulse">🔒</div>
-    <h2 class="text-3xl font-black mb-3" id="handoffTitle">端末を渡してください</h2>
-    <p class="text-lg opacity-80 mb-2" id="handoffSub">次のプレイヤー：<span id="handoffPlayerName" class="font-black" style="color:var(--c3);"></span></p>
-    <p class="text-sm opacity-50 mb-10">（画面を見えないようにして渡してください）</p>
-    <button class="btn btn-success btn-lg" onclick="readyHandoff()">
-      <i class="fas fa-check-circle"></i> <span id="handoffReadyLabel">準備できた！</span>
+  <div class="text-center p-8 max-w-sm w-full">
+    <!-- ターン情報バッジ -->
+    <div class="turn-badge mb-6" id="handoffTurnBadge">1年目 / 1ターン目</div>
+    <!-- プレイヤーの絵文字（大） -->
+    <div class="handoff-emoji-big" id="handoffEmojiBig">👤</div>
+    <!-- プレイヤー名 -->
+    <div class="handoff-name mt-4 mb-2" id="handoffPlayerName">プレイヤー1</div>
+    <!-- サブタイトル -->
+    <div class="handoff-subtitle text-lg opacity-80 mb-1" id="handoffTitle">のターンです！</div>
+    <div class="handoff-subtitle text-sm opacity-50 mb-10" id="handoffSub">画面を確認して「準備完了」を押してね</div>
+    <!-- 準備完了ボタン -->
+    <button class="btn btn-success btn-lg handoff-btn" onclick="readyHandoff()">
+      <i class="fas fa-play-circle"></i> <span id="handoffReadyLabel">準備完了 — スタート！</span>
     </button>
   </div>
 </div>
 
 <!-- ================================================================
-  EVENT CARD OVERLAY
+  EVENT CARD OVERLAY  (2段階: カードを引くボタン → カード内容表示)
 ================================================================ -->
 <div id="event-overlay">
-  <div class="event-card-big">
-    <div class="text-6xl mb-3" id="eventEmoji">🎴</div>
-    <div class="text-xl font-black mb-2" id="eventName">イベント</div>
+  <!-- フェーズA: カードを引く前 -->
+  <div id="event-draw-area">
+    <div class="event-year-label" id="eventYearLabel">📅 2年目スタート</div>
+    <div class="event-drawer-name" id="eventDrawerName">山田 がカードを引きます</div>
+    <button class="event-draw-btn" onclick="doDrawEventCard()">
+      🎴 イベントカードを引く！
+    </button>
+  </div>
+  <!-- フェーズB: カード内容 (最初は hidden) -->
+  <div class="event-card-big hidden" id="event-card-reveal">
+    <div class="text-xs font-bold mb-3 opacity-60 tracking-widest">📢 今年のイベント</div>
+    <div class="text-7xl mb-4" id="eventEmoji" style="animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both;">🎴</div>
+    <div class="text-2xl font-black mb-3" id="eventName">イベント</div>
     <div class="text-sm opacity-80 mb-6" id="eventDesc"></div>
+    <div class="text-xs opacity-50 mb-5" id="eventAffect"></div>
     <button class="btn btn-warning w-full" onclick="dismissEvent()">
-      <i class="fas fa-check"></i> わかった！
+      <i class="fas fa-check"></i> わかった！ゲームを続ける
     </button>
   </div>
 </div>
@@ -770,37 +801,58 @@ function renderActions(){
   }
 
   // ── アクション未使用：行動選択 ──
-  // サイコロアクション（会社・株を持っている場合のみ表示）
+  // ── サイコロ対象あり判定 ──
   const hasRollable = cp.companies.some(cid=>{
     const c = G.companies.find(x=>x.id===cid)
     return c && c.rolls.length > 0 && c.id !== 'bank'
   }) || cp.stocks.some(s=>s.qty>0)
 
-  // 会社・株を持っていてまだサイコロを振っていない → サイコロを強制
+  // ═══════════════════════════════════════════════════════
+  // ステップ1: サイコロ未振り かつ 振るべき資産あり
+  //   → サイコロボタンのみ表示。他アクションは一切非表示
+  // ═══════════════════════════════════════════════════════
   const needsDice = hasRollable && !cp.diceRolled
-
   if(needsDice){
-    // サイコロ優先モード：他アクションはロック
-    const noticeDiv = document.createElement('div')
-    noticeDiv.className = 'col-span-2 text-center py-3 rounded-xl mb-2'
-    noticeDiv.style.cssText = 'background:rgba(255,150,0,0.15);border:2px solid #FF9800;'
-    noticeDiv.innerHTML = \`<div class="text-2xl mb-1">🎲</div>
-      <div class="font-bold text-orange-300">先にサイコロを振ってください！</div>
-      <div class="text-xs mt-1 opacity-70">はたらく・ATM・購入は<br>サイコロを振った後に使えます</div>\`
-    el.appendChild(noticeDiv)
+    // ヘッダー説明
+    const header = document.createElement('div')
+    header.className = 'col-span-2 rounded-2xl mb-3 overflow-hidden'
+    header.style.cssText = 'background:linear-gradient(135deg,rgba(255,150,0,.18),rgba(255,150,0,.05));border:2px solid #FF9800;'
+    header.innerHTML = \`
+      <div class="flex items-center gap-3 px-4 py-3">
+        <div class="text-3xl">🎲</div>
+        <div>
+          <div class="font-black text-orange-300">まずサイコロを振ろう！</div>
+          <div class="text-xs opacity-70 mt-0.5">保有する会社・株の今ターンの損益が確定します</div>
+        </div>
+      </div>\`
+    el.appendChild(header)
 
+    // サイコロボタン（大きく目立つ）
     const rollDiv = document.createElement('div')
-    rollDiv.className = 'action-item col-span-2'
-    rollDiv.style.cssText = 'border:2px solid #FF9800;background:rgba(255,150,0,0.15);'
-    rollDiv.innerHTML = \`<div class="text-2xl mb-1">🎲</div>
-      <div class="font-bold">サイコロを振る</div>
-      <div class="text-xs opacity-70">全会社・株の損益を一括取得</div>\`
+    rollDiv.className = 'col-span-2 rounded-2xl cursor-pointer select-none transition-transform active:scale-95'
+    rollDiv.style.cssText = 'background:linear-gradient(135deg,#FF9800,#FF6534);padding:24px;text-align:center;box-shadow:0 4px 24px rgba(255,150,0,.35);'
+    rollDiv.innerHTML = \`
+      <div class="text-5xl mb-2" style="animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both;">🎲</div>
+      <div class="text-xl font-black text-white">サイコロを振る</div>
+      <div class="text-xs text-white opacity-80 mt-1">全会社・株の損益を一括計算</div>\`
     rollDiv.addEventListener('click', showDicePanel)
     el.appendChild(rollDiv)
 
-    // 売却ボタン（常に可）
+    // 売却は常時可能
     if(cp.companies.length > 0) _appendSellSection(el, cp)
     return
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ステップ2: サイコロ済み（or 振る必要なし）→ アクション選択
+  // ═══════════════════════════════════════════════════════
+  // サイコロ済みバナー（資産を持っていた場合のみ表示）
+  if(hasRollable && cp.diceRolled){
+    const doneBanner = document.createElement('div')
+    doneBanner.className = 'col-span-2 rounded-xl px-4 py-2 mb-2 flex items-center gap-2'
+    doneBanner.style.cssText = 'background:rgba(0,200,100,.12);border:2px solid #4CAF50;'
+    doneBanner.innerHTML = \`<span class="text-xl">✅</span><span class="text-sm font-bold text-green-300">サイコロ完了！アクションを選んでください</span>\`
+    el.appendChild(doneBanner)
   }
 
   const actions = [
@@ -809,8 +861,6 @@ function renderActions(){
     { icon:'🏢', label:'会社を買う', sub:'何個でも購入可',      fn: ()=>switchTab('market') },
     { icon:'📈', label:'株を買う',   sub:'何株でも購入可',      fn: ()=>switchTab('market') },
   ]
-  if(hasRollable)
-    actions.push({ icon:'🎲', label:'サイコロ（再振り）', sub:'全会社・株の損益を一括取得', fn: showDicePanel })
   if(cp.companies.includes('bank'))
     actions.push({ icon:'🏦', label:'融資する', sub:'他プレイヤーへ貸付', fn: showLendPanel })
   if(cp.debts && cp.debts.length > 0)
@@ -1754,13 +1804,43 @@ async function doEndTurn(){
 }
 
 // ============================================================
-// Event Card
+// Event Card  ─ 2段階表示（ボタン → カード内容 → 全員OK）
 // ============================================================
 function showEventCard(card){
+  // フェーズA: カードを引くボタン表示
+  const drawer = G.players[G.turnOrder[0]]  // 引くのはターン1位
+  document.getElementById('eventYearLabel').textContent  = G.year+'\u5e74\u76ee\u30b9\u30bf\u30fc\u30c8\uff01'
+  document.getElementById('eventDrawerName').textContent = drawer.name+'\u304c\u30ab\u30fc\u30c9\u3092\u5f15\u304d\u307e\u3059'
+  document.getElementById('event-draw-area').classList.remove('hidden')
+  document.getElementById('event-card-reveal').classList.add('hidden')
+  document.getElementById('event-overlay').classList.add('show')
+}
+
+function doDrawEventCard(){
+  // フェーズB: カード内容を表示
+  const card = G.eventCard
+  if(!card) return
   document.getElementById('eventEmoji').textContent = card.emoji
   document.getElementById('eventName').textContent  = card.name
   document.getElementById('eventDesc').textContent  = card.desc
-  document.getElementById('event-overlay').classList.add('show')
+
+  // 影響の説明を追加
+  const affectMap = {
+    company_profit_x2: '📢 全プレイヤーの会社収益が2倍になります',
+    company_loss_x2:   '📢 全プレイヤーの会社損失が2倍になります',
+    work_x3:           '📢 全プレイヤーのはたらく報酬が3倍になります',
+    stock_x2:          '📢 全プレイヤーの株の損益が2倍になります',
+    stock_half:        '📢 全プレイヤーの株の損益が半分になります',
+    bankruptcy:        '⚠️ ターン1位のプレイヤーが会社を全て売却します',
+    interest_x2:       '📢 全プレイヤーのATM利息が2倍になります（年末）',
+    dice_even:         '📢 この年はサイコロが必ず偶数になります',
+    dice_odd:          '📢 この年はサイコロが必ず奇数になります',
+    charity:           '📢 全員が1000円を最も貧しいプレイヤーに渡します',
+  }
+  document.getElementById('eventAffect').textContent = affectMap[card.type] || ''
+
+  document.getElementById('event-draw-area').classList.add('hidden')
+  document.getElementById('event-card-reveal').classList.remove('hidden')
 }
 
 function dismissEvent(){
@@ -1814,12 +1894,22 @@ function afterBankruptcy(){
 }
 
 // ============================================================
-// Handoff
+// Handoff / Turn Start Screen
 // ============================================================
+const PLAYER_EMOJIS_BIG = ['🦁','🐯','🦊','🐺','🐻','🦋','🐸','🐙']
+
 function showHandoff(nextPlayer){
+  // ターン情報
+  const turnIdx   = G.turnOrder.indexOf(nextPlayer.id) + 1
+  const totalTurn = G.turnOrder.length
+  const yearStr   = G.year+'\u5e74\u76ee / '+turnIdx+'\u756a\u624b'
+
+  document.getElementById('handoffTurnBadge').textContent  = yearStr
+  document.getElementById('handoffEmojiBig').textContent   = PLAYER_EMOJIS_BIG[nextPlayer.id % PLAYER_EMOJIS_BIG.length]
   document.getElementById('handoffPlayerName').textContent = nextPlayer.name
-  document.getElementById('handoffTitle').textContent = '端末を渡してください 🔒'
-  document.getElementById('handoffReadyLabel').textContent = nextPlayer.name+'の番だよ！準備完了'
+  document.getElementById('handoffTitle').textContent      = 'のターンです！'
+  document.getElementById('handoffSub').textContent        = '画面を確認して「スタート」を押してね'
+  document.getElementById('handoffReadyLabel').textContent = 'スタート！'
   document.getElementById('screen-handoff').classList.add('show')
 }
 
