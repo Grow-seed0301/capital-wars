@@ -404,15 +404,6 @@ body{
   <!-- メインコンテンツ -->
   <div style="position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px 180px;text-align:center;">
 
-    <!-- キャラクターアイコン群（上段） -->
-    <div class="char-ring" style="margin-bottom:18px;">
-      <div class="char-icon" style="--d:2.2s;border-color:rgba(255,215,0,.6);background:rgba(255,215,0,.15);">👨‍💼</div>
-      <div class="char-icon" style="--d:2.7s;animation-delay:.3s;border-color:rgba(255,100,100,.5);background:rgba(255,80,80,.12);">👩‍💼</div>
-      <div class="char-icon" style="--d:2.4s;animation-delay:.6s;border-color:rgba(100,200,255,.5);background:rgba(80,180,255,.12);">🧑‍💻</div>
-      <div class="char-icon" style="--d:3.0s;animation-delay:.2s;border-color:rgba(150,255,150,.5);background:rgba(100,220,100,.12);">👴</div>
-      <div class="char-icon" style="--d:2.5s;animation-delay:.8s;border-color:rgba(220,180,255,.5);background:rgba(180,100,255,.12);">👧</div>
-    </div>
-
     <!-- ロゴ -->
     <div class="logo-wrap" style="margin-bottom:6px;">
       <span class="logo-capital">CAPITAL</span>
