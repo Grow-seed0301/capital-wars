@@ -81,16 +81,16 @@ export const STOCKS = [
 ]
 
 export const EVENT_CARDS = [
-  { id: 1,  name: 'インフレーション',   emoji: '📈', desc: '会社の利益が2倍になる（今ターンのみ）',            type: 'company_profit_x2' },
-  { id: 2,  name: 'デフレーション',     emoji: '📉', desc: '会社の損害が2倍になる（今ターンのみ）',            type: 'company_loss_x2'   },
-  { id: 3,  name: '就労支援',           emoji: '👷', desc: '働く金額が3倍になる（今ターンのみ）',              type: 'work_x3'           },
-  { id: 4,  name: '株価高騰',           emoji: '🚀', desc: '株の購入額2倍・売値/配当も2倍（今ターンのみ）',    type: 'stock_x2'          },
-  { id: 5,  name: '株価暴落',           emoji: '💥', desc: '株の購入額½・売値/配当も½（今ターンのみ）',        type: 'stock_half'        },
-  { id: 6,  name: '倒産',              emoji: '🏚️', desc: '引いた人が持つ会社を全て売却しなければならない',    type: 'bankruptcy'        },
-  { id: 7,  name: '利息UP',            emoji: '💰', desc: 'ATMの利息が2倍になる（今ターンのみ）',             type: 'interest_x2'       },
-  { id: 8,  name: 'サイコロ偶数固定',   emoji: '🎲', desc: 'このターンのサイコロが必ず偶数になる',             type: 'dice_even'         },
-  { id: 9,  name: 'サイコロ奇数固定',   emoji: '🎲', desc: 'このターンのサイコロが必ず奇数になる',             type: 'dice_odd'          },
-  { id: 10, name: '投資家イベント',     emoji: '🤝', desc: '資産最少のプレイヤーに全員が1000円ずつ渡す',       type: 'charity'           },
+  { id: 1,  name: 'インフレーション',   emoji: '📈', desc: 'この年、全プレイヤーの会社収益が2倍になる！',              type: 'company_profit_x2' },
+  { id: 2,  name: 'デフレーション',     emoji: '📉', desc: 'この年、全プレイヤーの会社損失が2倍になる！',              type: 'company_loss_x2'   },
+  { id: 3,  name: '就労支援',           emoji: '👷', desc: 'この年、全プレイヤーの「はたらく」報酬が3倍（300円）になる！', type: 'work_x3'           },
+  { id: 4,  name: '株価高騰',           emoji: '🚀', desc: 'この年、全プレイヤーのサイコロによる株の損益が2倍になる！',  type: 'stock_x2'          },
+  { id: 5,  name: '株価暴落',           emoji: '💥', desc: 'この年、全プレイヤーのサイコロによる株の損益が半分になる！',  type: 'stock_half'        },
+  { id: 6,  name: '倒産',              emoji: '🏚️', desc: '現在1位のプレイヤーが保有する会社を全て強制売却！',          type: 'bankruptcy'        },
+  { id: 7,  name: '利息UP',            emoji: '💰', desc: 'この年の年末、全プレイヤーのATM利息が2倍になる！',           type: 'interest_x2'       },
+  { id: 8,  name: 'サイコロ偶数固定',   emoji: '🎲', desc: 'この年、全プレイヤーのサイコロの目が必ず偶数になる！',       type: 'dice_even'         },
+  { id: 9,  name: 'サイコロ奇数固定',   emoji: '🎲', desc: 'この年、全プレイヤーのサイコロの目が必ず奇数になる！',       type: 'dice_odd'          },
+  { id: 10, name: '投資家イベント',     emoji: '🤝', desc: '全プレイヤーが現金1000円を資産最少のプレイヤーに渡す！',     type: 'charity'           },
 ]
 
 // ATM利息テーブル
@@ -255,7 +255,7 @@ gameRouter.post('/action/work', async (c) => {
   if (ns.activeEventTypes.includes('work_x3')) earn = 300
 
   p.cash += earn
-  p.actionUsed = 1
+  p.actionUsed += 1
   ns.pendingRolls = []
   recalcAssets(p, ns)
   ns.log = [`💼 ${p.name}が働いて${earn}円もらった！`, ...ns.log.slice(0,29)]
@@ -277,7 +277,7 @@ gameRouter.post('/action/deposit', async (c) => {
 
   p.cash -= amount
   p.atm  += amount
-  p.actionUsed = 1
+  p.actionUsed += 1
   recalcAssets(p, ns)
   ns.log = [`🏧 ${p.name}がATMに${amount}円を預けた（残高: ${p.atm}円）`, ...ns.log.slice(0,29)]
 
@@ -298,7 +298,7 @@ gameRouter.post('/action/withdraw', async (c) => {
 
   p.atm  -= amount
   p.cash += amount
-  p.actionUsed = 1
+  p.actionUsed += 1
   // ATMアクションはサイコロ不要（pendingRollsは変更しない）
   recalcAssets(p, ns)
   ns.log = [`🏧 ${p.name}がATMから${amount}円を引き出した`, ...ns.log.slice(0,29)]
@@ -307,15 +307,13 @@ gameRouter.post('/action/withdraw', async (c) => {
 })
 
 // ============================================================
-// アクション：会社を買う（購入自体はアクション消費しない。サイコロが1アクション）
+// アクション：会社を買う（アクション消費なし・何個でも購入可）
 // ============================================================
 gameRouter.post('/action/buy-company', async (c) => {
   const { state, companyId } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
 
-  // アクション済みなら購入不可
-  if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
@@ -341,13 +339,14 @@ gameRouter.post('/action/buy-company', async (c) => {
 })
 
 // ============================================================
-// アクション：会社をアップグレード
+// アクション：会社をアップグレード（アクション消費あり）
 // ============================================================
 gameRouter.post('/action/upgrade-company', async (c) => {
   const { state, companyId } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
-  if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです' })
+  const maxAct = p.extraAction ? 2 : 1
+  if (p.actionUsed >= maxAct) return c.json({ success: false, error: 'すでにアクション済みです' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
@@ -361,6 +360,7 @@ gameRouter.post('/action/upgrade-company', async (c) => {
   p.companies = p.companies.filter((id: string) => id !== companyId)
   p.companies.push(comp.upgradeTo)
   // アップグレードは既存の在庫枠をそのまま引き継ぐ（在庫変化なし）
+  p.actionUsed += 1
   recalcAssets(p, ns)
   const newComp = COMPANIES.find(c => c.id === comp.upgradeTo)
   ns.log = [`⬆️ ${p.name}が「${comp.emoji}${comp.name}」を「${newComp?.emoji}${newComp?.name}」にアップグレード！`, ...ns.log.slice(0,29)]
@@ -407,7 +407,6 @@ gameRouter.post('/action/roll-all', async (c) => {
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
 
-  if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   // actionUsedチェックは不要（サイコロはアクション消費前に振れる）
 
@@ -486,14 +485,45 @@ gameRouter.post('/action/roll-all', async (c) => {
 })
 
 // ============================================================
-// アクション：株を買う
+// アクション：株を売る
+// ============================================================
+gameRouter.post('/action/sell-stock', async (c) => {
+  const { state, stockId, qty } = await c.req.json()
+  const ns = deepCopy(state)
+  const p = ns.players[ns.currentPlayer]
+
+  if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
+
+  const st = STOCKS.find(s => s.id === stockId)
+  if (!st) return c.json({ success: false, error: '株が見つかりません' })
+
+  const holding = p.stocks.find((s: any) => s.id === stockId)
+  if (!holding || holding.qty === 0) return c.json({ success: false, error: 'その株を持っていません' })
+
+  const sellQty = Math.min(qty || 1, holding.qty)
+  let price = st.buyPrice * sellQty
+  // イベントによる売値変動
+  if (ns.activeEventTypes.includes('stock_x2'))   price *= 2
+  if (ns.activeEventTypes.includes('stock_half'))  price = Math.floor(price / 2)
+
+  p.cash += price
+  holding.qty -= sellQty
+  if (holding.qty === 0) p.stocks = p.stocks.filter((s: any) => s.id !== stockId)
+
+  recalcAssets(p, ns)
+  ns.log = [`📉 ${p.name}が${st.emoji}${st.name}を${sellQty}株 ${price}円で売却！`, ...ns.log.slice(0,29)]
+
+  return c.json({ success: true, state: ns })
+})
+
+// ============================================================
+// アクション：株を買う（アクション消費なし・何株でも購入可）
 // ============================================================
 gameRouter.post('/action/buy-stock', async (c) => {
   const { state, stockId, qty } = await c.req.json()
   const ns = deepCopy(state)
   const p = ns.players[ns.currentPlayer]
 
-  if (p.actionUsed >= 1) return c.json({ success: false, error: 'すでにアクション済みです。購入は行動前のみ可能です' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
 
@@ -534,7 +564,7 @@ gameRouter.post('/action/buy-stock', async (c) => {
 })
 
 // ============================================================
-// アクション：融資する（金融機関オーナーのみ）
+// アクション：融資する（金融機関オーナーのみ・アクション消費なし）
 // ============================================================
 gameRouter.post('/action/lend', async (c) => {
   const { state, toPlayerId, amount } = await c.req.json()
@@ -543,6 +573,7 @@ gameRouter.post('/action/lend', async (c) => {
 
   if (!p.companies.includes('bank'))
     return c.json({ success: false, error: '金融機関を所有していません' })
+  if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   if (p.cash < amount)
     return c.json({ success: false, error: '現金が足りません' })
 
@@ -613,6 +644,11 @@ gameRouter.post('/action/shrine-collect', async (c) => {
 gameRouter.post('/end-turn', async (c) => {
   const { state } = await c.req.json()
   let ns = deepCopy(state)
+
+  // メディア広告費が未処理の場合はターン終了を拒否
+  if (ns.pendingShrineBonus) {
+    return c.json({ success: false, error: '📺 先にメディアの広告費を受け取ってください！マーケットタブから対象を選んでください。' })
+  }
 
   // 現プレイヤーのリセット
   const cp = ns.players[ns.currentPlayer]
@@ -801,10 +837,11 @@ function processYearEnd(ns: any): any {
 // ============================================================
 // ユーティリティ
 // ============================================================
-// 購入フェーズ中かどうか（actionUsed=0 なら購入フェーズ）
+// アクション可能判定（extraActionありは2回まで）
 function canAct(p: any): boolean {
   if (p.bankrupt) return false
-  return p.actionUsed === 0   // 購入完了前のみ行動可
+  const maxAct = p.extraAction ? 2 : 1
+  return p.actionUsed < maxAct
 }
 
 // サイコロを先に振る必要があるか
@@ -820,30 +857,6 @@ function needsDiceFirst(p: any, year: number = 2): boolean {
     }) ||
     (p.stocks || []).some((s: any) => s.qty > 0)
   return hasRollable
-}
-
-// 購入フェーズ中かつサイコロ待ちが空か（購入可能判定）
-function canBuy(p: any, ns: any): boolean {
-  if (p.bankrupt) return false
-  if (ns.pendingRolls && ns.pendingRolls.length > 0) return false
-  return p.actionUsed === 0
-}
-
-// 保有会社・株からサイコロキューを生成（サイコロのある会社・株のみ）
-function buildPendingRolls(p: any): { type: 'company' | 'stock', id: string }[] {
-  const rolls: { type: 'company' | 'stock', id: string }[] = []
-  for (const cid of (p.companies || [])) {
-    const comp = COMPANIES.find(c => c.id === cid)
-    if (comp && comp.rolls.length > 0 && comp.id !== 'bank') {
-      rolls.push({ type: 'company', id: cid })
-    }
-  }
-  for (const s of (p.stocks || [])) {
-    if (s.qty > 0) {
-      rolls.push({ type: 'stock', id: s.id })
-    }
-  }
-  return rolls
 }
 
 // ③ Fisher-Yates シャッフル

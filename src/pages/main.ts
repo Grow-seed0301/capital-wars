@@ -779,8 +779,9 @@ function renderActions(){
 
   document.getElementById('endTurnBtn').disabled = false
 
-  // ── アクション済み ──
-  if(cp.actionUsed >= 1){
+  // ── アクション済み or extraAction中 ──
+  const maxAct = cp.extraAction ? 2 : 1
+  if(cp.actionUsed >= maxAct){
     // メディア広告費の対象選択待ち
     if(G.pendingShrineBonus){
       el.innerHTML = \`
@@ -802,7 +803,16 @@ function renderActions(){
     return
   }
 
-  // ── アクション未使用：行動選択 ──
+  // extraActionが解放され1回目完了→ 2回目アクション通知バナー
+  if(cp.actionUsed === 1 && cp.extraAction){
+    const extraBanner = document.createElement('div')
+    extraBanner.className = 'col-span-2 rounded-xl px-4 py-2 mb-2 flex items-center gap-2'
+    extraBanner.style.cssText = 'background:rgba(255,200,0,.18);border:2px solid #FFD700;'
+    extraBanner.innerHTML = '<span class="text-xl">🚌</span><span class="text-sm font-bold" style="color:#FFD700;">バス会社ボーナス！もう1回アクションできます！</span>'
+    el.appendChild(extraBanner)
+  }
+
+  // ── アクション未使用または2回目：行動選択 ──
   // サイコロ対象あり判定
   const hasRollable = cp.companies.some(cid=>{
     const c = G.companies.find(x=>x.id===cid)
@@ -970,20 +980,46 @@ function renderPortfolio(){
     <div class="text-3xl">🏧</div>
   </div>\`
 
-  // 保有株
-  if(cp.stocks.length > 0){
-    let sh = \`<div class="card-white p-3"><div class="font-bold mb-2">📈 保有株</div>\`
+  // 保有株（自分のターンなら売却可）
+  if(cp.stocks.some(s=>s.qty>0)){
+    const isMyTurn = !cp.isAI
+    const stDiv = document.createElement('div')
+    stDiv.className = 'card-white p-3'
+    stDiv.innerHTML = '<div class="font-bold mb-2">📈 保有株'
+      + '<span class="text-xs font-normal ml-1" style="color:#4CAF50;">自分のターン中はいつでも売却可</span>'
+      + '</div>'
     cp.stocks.forEach(s=>{
+      if(s.qty===0) return
       const st = G.stocks.find(x=>x.id===s.id)
       if(!st) return
-      sh += \`<div class="flex justify-between items-center py-1 border-b border-gray-100">
-        <div>\${st.emoji} \${st.name} × \${s.qty}株</div>
-        <div class="font-bold">\${fmt(st.buyPrice*s.qty)}</div>
-      </div>\`
+      const row = document.createElement('div')
+      row.className = 'flex justify-between items-center py-1 border-b border-gray-100 gap-2 flex-wrap'
+      row.innerHTML = \`
+        <div class="text-sm flex-1">\${st.emoji} <span class="font-bold">\${st.name}</span>
+          ×\${s.qty}株
+          <span class="text-xs ml-1" style="color:#4CAF50;">売値: \${fmt(st.buyPrice*s.qty)}(購入値)</span>
+        </div>\`
+      const sellBtn = document.createElement('button')
+      sellBtn.className = 'btn btn-danger btn-sm'
+      sellBtn.innerHTML = '📉 売却'
+      if(!isMyTurn){
+        sellBtn.disabled = true
+      } else {
+        sellBtn.addEventListener('click', ()=> doSellStock(s.id, 1))
+      }
+      row.appendChild(sellBtn)
+      if(s.qty > 1 && isMyTurn){
+        const sellAllBtn = document.createElement('button')
+        sellAllBtn.className = 'btn btn-warning btn-sm'
+        sellAllBtn.innerHTML = '全売却('+s.qty+'株)'
+        sellAllBtn.addEventListener('click', ()=> doSellStock(s.id, s.qty))
+        row.appendChild(sellAllBtn)
+      }
+      stDiv.appendChild(row)
     })
-    sh += '</div>'
-    wrap.innerHTML += sh
+    wrap.appendChild(stDiv)
   }
+
 
   // 保有会社（自分のターンなら何回でも売却可能）
   if(cp.companies.length > 0){
@@ -1083,7 +1119,8 @@ function renderMarket(){
   }) || cp.stocks.some(s=>s.qty>0)
   // 1年目はサイコロロック不要（購入後すぐ使えるようにする）
   const diceLocked = hasRollableAssets && !cp.diceRolled && G.year > 1
-  const canAct = cp.actionUsed === 0 && !cp.isAI && !inRollPhase && !diceLocked
+  const maxActMarket = cp.extraAction ? 2 : 1
+  const canAct = !cp.isAI && !inRollPhase && !diceLocked && cp.actionUsed < maxActMarket
   const el = document.getElementById('market-content')
   el.innerHTML = ''
 
@@ -1519,6 +1556,28 @@ async function doBuyStock(stockId){
   )
 }
 
+// 株売却
+async function doSellStock(stockId, qty){
+  const st = G.stocks.find(s=>s.id===stockId)
+  if(!st){ showToast('株データが見つかりません','error'); return }
+  let price = st.buyPrice * qty
+  if(G.activeEventTypes.includes('stock_x2')) price*=2
+  if(G.activeEventTypes.includes('stock_half')) price=Math.floor(price/2)
+  showConfirm(
+    st.emoji+' '+st.name+'を売る？',
+    qty+'\u682a <span class="font-black">'+fmt(price)+'</span>\u3067\u58f2\u5374<br><span class="text-xs opacity-60">\u73fe\u5728\u306e\u8cfc\u5165\u5024\u30d9\u30fc\u30b9\u3067\u58f2\u5374\u3057\u307e\u3059</span>',
+    async ()=>{
+      const data = await apiPost('/action/sell-stock',{state:G, stockId, qty})
+      if(!data) return
+      if(!data.success){ showToast(data.error,'error'); return }
+      G = mergeClientState(data.state)
+      showToast('📉 '+st.name+'を売却！+'+fmt(price)+'円','info')
+      renderGame()
+    }
+  )
+}
+
+
 // Finish purchase → move to roll phase
 async function doFinishPurchase(){
   const data = await apiPost('/action/finish-purchase',{state:G})
@@ -1713,9 +1772,20 @@ function showShrineTargets(){
   const bonus = G.pendingShrineBonus
   if(!bonus){ document.getElementById('dice-panel').classList.add('hidden'); renderGame(); return }
 
+  // 対象候補：自分以外の非破産プレイヤー
+  const targets = G.players.filter(p=>p.id!==cp.id && !p.bankrupt)
+  if(targets.length === 0){
+    // 1人プレイまたは全員破産 → 自動キャンセル
+    showToast('📺 対象プレイヤーがいないため広告貴はキャンセルされました','info')
+    G.pendingShrineBonus = null
+    document.getElementById('dice-panel').classList.add('hidden')
+    renderGame()
+    return
+  }
+
   document.getElementById('shrineAmountLabel').textContent = fmt(bonus.amount)+'もらえます！'
   const el = document.getElementById('shrine-targets')
-  el.innerHTML = G.players
+  el.innerHTML = targets
     .filter(p=>p.id!==cp.id)
     .map(p=>\`
     <button class="btn btn-warning w-full" onclick="doShrineCollect(\${p.id})">
@@ -1793,6 +1863,11 @@ async function doRepay(fromPlayerId){
 // ============================================================
 async function doEndTurn(){
   if(processingAction) return
+  // メディア広告費が未処理なら終了不可
+  if(G.pendingShrineBonus){
+    showToast('📺 先にメディアの広告費を受け取ってください！マーケットタブから対象を選んでください', 'error')
+    return
+  }
   processingAction = true
   try{
     const res = await fetch('/api/game/end-turn',{
@@ -2025,7 +2100,7 @@ async function doAITurn(){
       }).then(r=>r.json())
 
       if(rollRes.success){
-        G = rollRes.state
+        G = mergeClientState(rollRes.state)
         await delay(600)
 
         // メディアボーナス（shrine）が発生した場合 → 最もお金持ちのプレイヤーから徴収
@@ -2039,7 +2114,7 @@ async function doAITurn(){
               headers:{'Content-Type':'application/json'},
               body:JSON.stringify({state:G, targetPlayerId:richest[0].id})
             }).then(r=>r.json())
-            if(sd.success) G=sd.state
+            if(sd.success) G=mergeClientState(sd.state)
             await delay(400)
           }
         }
@@ -2089,7 +2164,7 @@ async function doAITurn(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({state:G, companyId:pick.id})
         }).then(r=>r.json())
-        if(d.success){ G=d.state; await delay(400) }
+        if(d.success){ G=mergeClientState(d.state); await delay(400) }
       } else if(buyableStocks.length>0 && Math.random()>0.6){
         // 株を購入
         const pick = buyableStocks[0]
@@ -2098,7 +2173,7 @@ async function doAITurn(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({state:G, stockId:pick.id, qty:1})
         }).then(r=>r.json())
-        if(d.success){ G=d.state; await delay(400) }
+        if(d.success){ G=mergeClientState(d.state); await delay(400) }
       } else if(p.cash < 400 || Math.random()>0.65){
         // はたらく
         const d = await fetch('/api/game/action/work',{
@@ -2106,7 +2181,7 @@ async function doAITurn(){
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({state:G})
         }).then(r=>r.json())
-        if(d.success){ G=d.state; await delay(400) }
+        if(d.success){ G=mergeClientState(d.state); await delay(400) }
       } else {
         // ATM預金
         const depositAmt = Math.floor(G.players[G.currentPlayer].cash * 0.3 / 100)*100
@@ -2116,14 +2191,14 @@ async function doAITurn(){
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({state:G, amount:depositAmt})
           }).then(r=>r.json())
-          if(d.success){ G=d.state; await delay(400) }
+          if(d.success){ G=mergeClientState(d.state); await delay(400) }
         } else {
           const d = await fetch('/api/game/action/work',{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({state:G})
           }).then(r=>r.json())
-          if(d.success){ G=d.state; await delay(400) }
+          if(d.success){ G=mergeClientState(d.state); await delay(400) }
         }
       }
     }
@@ -2147,12 +2222,14 @@ function delay(ms){ return new Promise(r=>setTimeout(r,ms)) }
 // Result
 // ============================================================
 function showResult(){
-  const sorted = [...G.players].sort((a,b)=>b.totalAssets-a.totalAssets)
+  const activePlayers = [...G.players].filter(p=>!p.bankrupt).sort((a,b)=>b.totalAssets-a.totalAssets)
+  const bankruptPlayers = [...G.players].filter(p=>p.bankrupt)
   document.getElementById('resultYears').textContent = G.maxYears+'年間のゲーム終了！'
 
-  document.getElementById('result-ranks').innerHTML = sorted.map((p,i)=>\`
+  const rankMedals = ['🥇','🥈','🥉','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣','🔟']
+  let ranksHTML = activePlayers.map((p,i)=>\`
     <div class="rank-row rank-\${i<3?i+1:'other'}">
-      <div class="text-2xl">\${['🥇','🥈','🥉','4⃣','5⃣','6⃣','7⃣','8⃣','9⃣','🔟'][i]||i+1+'.'}</div>
+      <div class="text-2xl">\${rankMedals[i]||i+1+'.'}</div>
       <div class="flex-1">
         <div class="font-bold">\${PLAYER_EMOJIS[p.id]} \${p.name}</div>
         <div class="text-sm">現金:\${fmt(p.cash)} ATM:\${fmt(p.atm)} 株:\${fmt(p.stocks.reduce((s,st)=>{const x=G.stocks.find(y=>y.id===st.id);return s+(x?x.buyPrice*st.qty:0)},0))}</div>
@@ -2160,6 +2237,22 @@ function showResult(){
       <div class="font-black text-xl">\${fmt(p.totalAssets)}</div>
     </div>
   \`).join('')
+  if(bankruptPlayers.length > 0){
+    ranksHTML += \`<div class="mt-3 pt-3" style="border-top:2px dashed rgba(255,50,50,0.4);">
+      <div class="text-xs font-bold mb-2" style="color:#f44336;">💀 破産</div>\`
+    ranksHTML += bankruptPlayers.map(p=>\`
+      <div class="rank-row rank-other" style="opacity:0.6;background:rgba(200,0,0,0.15);">
+        <div class="text-2xl">💀</div>
+        <div class="flex-1">
+          <div class="font-bold">\${PLAYER_EMOJIS[p.id]} \${p.name}</div>
+          <div class="text-sm">\${p.eliminatedYear ? p.eliminatedYear+'年目に破産' : '破産'}</div>
+        </div>
+        <div class="font-black text-xl" style="color:#f44336;">破産</div>
+      </div>
+    \`).join('')
+    ranksHTML += '</div>'
+  }
+  document.getElementById('result-ranks').innerHTML = ranksHTML
 
   document.getElementById('result-lesson').innerHTML = \`
     <p>✅ <b>現金だけじゃなく、ATMや株にも分けて持つ</b>のが大切！</p>
