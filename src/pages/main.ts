@@ -1234,9 +1234,9 @@ function renderPortfolio(){
     <div class="text-3xl">🏧</div>
   </div>\`
 
-  // 保有株（自分のターンなら売却可）
+  // 保有株（自分がcurrentPlayerの場合のみ売却可）
   if(cp.stocks.some(s=>s.qty>0)){
-    const isMyTurn = !cp.isAI
+    const isMyTurn = !cp.isAI && cp.id === G.currentPlayer
     const stDiv = document.createElement('div')
     stDiv.className = 'card-white p-3'
     stDiv.innerHTML = '<div class="font-bold mb-2">📈 保有株'
@@ -1275,9 +1275,9 @@ function renderPortfolio(){
   }
 
 
-  // 保有会社（自分のターンなら何回でも売却可能）
+  // 保有会社（自分がcurrentPlayerの場合のみ売却可）
   if(cp.companies.length > 0){
-    const isMyTurn = !cp.isAI
+    const isMyTurn = !cp.isAI && cp.id === G.currentPlayer
     const compDiv = document.createElement('div')
     compDiv.className = 'card-white p-3'
     compDiv.innerHTML = \`<div class="font-bold mb-2">🏢 保有会社
@@ -2035,8 +2035,12 @@ function showShrineTargets(){
   // 対象候補：自分以外の非破産プレイヤー
   const targets = G.players.filter(p=>p.id!==cp.id && !p.bankrupt)
   if(targets.length === 0){
-    // 1人プレイまたは全員破産 → 自動キャンセル
-    showToast('📺 対象プレイヤーがいないため広告貴はキャンセルされました','info')
+    // 1人プレイまたは全員破産 → サーバーに送信してキャンセル
+    showToast('📺 対象プレイヤーがいないため広告費はキャンセルされました','info')
+    // クライアントのみリセットだと次ターンにサーバー側でbonusが残るためAPIでリセット
+    apiPost('/action/shrine-collect',{state:G, targetPlayerId: cp.id}).then(d=>{
+      if(d && d.success) G = mergeClientState(d.state)
+    }).catch(()=>{})
     G.pendingShrineBonus = null
     document.getElementById('dice-panel').classList.add('hidden')
     renderGame()
@@ -2462,7 +2466,9 @@ async function doAITurn(){
     // 1回目アクション
     await doAIAction()
     // extraAction(バス/鉄道ボーナス)がある場合は2回目アクション
-    if(G.players[G.currentPlayer].extraAction && G.players[G.currentPlayer].actionUsed < 2){
+    // buy-company/buy-stockはactionUsed消費なし → 再度actionUsed < maxActをチェック
+    const p2 = G.players[G.currentPlayer]
+    if(p2.extraAction && p2.actionUsed < 2){
       await delay(300)
       await doAIAction()
     }

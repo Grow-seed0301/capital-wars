@@ -581,7 +581,7 @@ gameRouter.post('/action/buy-stock', async (c) => {
 })
 
 // ============================================================
-// アクション：融資する（金融機関オーナーのみ・アクション消費なし）
+// アクション：融資する（金融機関オーナーのみ・アクション消費あり）
 // ============================================================
 gameRouter.post('/action/lend', async (c) => {
   const { state, toPlayerId, amount } = await c.req.json()
@@ -592,6 +592,9 @@ gameRouter.post('/action/lend', async (c) => {
     return c.json({ success: false, error: '金融機関を所有していません' })
   if (p.bankrupt) return c.json({ success: false, error: '破産しています' })
   if (!canAct(p)) return c.json({ success: false, error: 'すでにアクション済みです' })
+  if (needsDiceFirst(p, ns.year)) return c.json({ success: false, error: 'まず先にサイコロを振ってください' })
+  if (!toPlayerId && toPlayerId !== 0) return c.json({ success: false, error: '融資先を選んでください' })
+  if (!amount || amount <= 0) return c.json({ success: false, error: '金額を入力してください' })
   if (p.cash < amount)
     return c.json({ success: false, error: '現金が足りません' })
 
@@ -650,9 +653,10 @@ gameRouter.post('/action/shrine-collect', async (c) => {
   const owner  = ns.players[ownerId]
   const target = ns.players[targetPlayerId]
 
-  // ②破産者からは徴収しない
-  if (target.bankrupt) {
+  // ②破産者または自分自身（キャンセル用）からは徴収しない
+  if (target.bankrupt || target.id === owner.id) {
     ns.pendingShrineBonus = null
+    ns.log = [`📺 ${owner.name}の広告費徴収がキャンセルされました`, ...ns.log.slice(0,29)]
     return c.json({ success: true, state: ns })
   }
   const actual = Math.min(amount, target.cash)
@@ -743,21 +747,39 @@ function processYearEnd(ns: any): any {
   for (const p of ns.players) {
     if (p.bankrupt) continue
     for (const debt of p.debts) {
+      if (debt.amount <= 0) continue  // 完済済みの借金はスキップ
       const interest = debt.yearlyInterest
       const lender = ns.players[debt.fromPlayerId]
       if (p.cash >= interest) {
         p.cash -= interest
         lender.cash += interest
+        // 貸付側のloansも更新（参照を同期）
+        const loan = lender.loans.find((l: any) => l.toPlayerId === p.id)
+        if (loan) loan.amount = debt.amount  // 同期（借主のdebt.amountが正）
         ns.log = [`💳 ${p.name}が${lender.name}に利息${interest}円支払い`, ...ns.log.slice(0,29)]
       } else {
         // 払えない場合は現金を0にして差額は借金に上乗せ
         const shortfall = interest - p.cash
         p.cash = 0
         debt.amount += shortfall
+        const loan = lender.loans.find((l: any) => l.toPlayerId === p.id)
+        if (loan) loan.amount = debt.amount  // 同期
         ns.log = [`⚠️ ${p.name}が利息${interest}円を払えず！${shortfall}円を借金に上乗せ`, ...ns.log.slice(0,29)]
       }
       recalcAssets(lender, ns)  // ③貸主側の総資産を更新
     }
+    // 完済済みdebtをクリーンアップ
+    p.debts = p.debts.filter((d: any) => d.amount > 0)
+  }
+
+  // 完済済みloansをクリーンアップ（対応するdebtが0になったloansを除去）
+  for (const p of ns.players) {
+    p.loans = p.loans.filter((l: any) => {
+      const borrower = ns.players[l.toPlayerId]
+      // 借主側のdebtが完済されたloansを除去
+      const debt = borrower?.debts.find((d: any) => d.fromPlayerId === p.id)
+      return !!debt && debt.amount > 0
+    })
   }
 
   for (const p of ns.players) {
@@ -777,20 +799,26 @@ function processYearEnd(ns: any): any {
 
   // ゲーム終了判定
   if (nextYear > ns.maxYears) {
-    // 最終年：融資全回収
+    // 最終年：融資全回収（現金→ATMの順に回収）
     for (const p of ns.players) {
       for (const loan of p.loans) {
         const target = ns.players[loan.toPlayerId]
-        const recover = Math.min(loan.amount, target.cash + target.atm)
-        if (target.cash >= loan.amount) {
-          target.cash -= loan.amount
-        } else {
-          const fromATM = Math.min(loan.amount - target.cash, target.atm)
-          target.cash = 0
+        const owed = loan.amount
+        if (owed <= 0) continue
+        let recovered = 0
+        // まず現金から
+        const fromCash = Math.min(owed, Math.max(0, target.cash))
+        target.cash -= fromCash
+        recovered += fromCash
+        // 足りない分はATMから
+        if (recovered < owed) {
+          const fromATM = Math.min(owed - recovered, Math.max(0, target.atm))
           target.atm -= fromATM
+          recovered += fromATM
         }
-        p.cash += recover
-        ns.log = [`🏦 最終回収: ${p.name} ← ${target.name} ${recover}円`, ...ns.log.slice(0,29)]
+        p.cash += recovered
+        loan.amount = Math.max(0, owed - recovered)
+        ns.log = [`🏦 最終回収: ${p.name} ← ${target.name} ${recovered}円`, ...ns.log.slice(0,29)]
       }
     }
     for (const p of ns.players) recalcAssets(p, ns)
